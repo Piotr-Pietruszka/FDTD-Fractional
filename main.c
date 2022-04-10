@@ -3,11 +3,6 @@
 int main()
 {
 
-    double gamma_1 = tgamma(0.1);
-    printf("gamma: %f\n", gamma_1);
-
-    // getchar();
-
     // domain constants
     double dz = 0.1e-6;
 
@@ -29,6 +24,9 @@ int main()
     double* Ex = calloc(Nz*Nt, sizeof(double));
     double* Hy = calloc(Nz*Nt, sizeof(double));
 
-    simulation(dz, Nz, dt, Nt, alpha, Ex, Hy);
+    double* Ex_inc = calloc(Nt, sizeof(double));
+    double* Hy_inc = calloc(Nt, sizeof(double));
+
+    simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_inc, Hy_inc);
 
 }

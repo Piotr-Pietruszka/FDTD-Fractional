@@ -1,0 +1,6 @@
+*.exe
+.vscode/
+temp.txt
+results/*.bin
+results/*.png
+results/*.avi

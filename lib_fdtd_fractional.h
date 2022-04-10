@@ -19,7 +19,8 @@ void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
 
 void simulation(const double dz, const int Nz, const double dt, const int Nt,
                 const double alpha,
-                double* Ex, double* Hy);
+                double* Ex, double* Hy,
+                double* Ex_inc, double* Hy_inc);
 
 void saveFieldToBinary(const char *filename,
 							const double *data,
@@ -28,4 +29,4 @@ void saveFieldToBinary(const char *filename,
 
 double binomialCoeff(const double alpha, const int k);
 
-double wCoeff(const double w, const double alpha, const int n);
+double fracGLCoeff(const double w, const double alpha, const int n);

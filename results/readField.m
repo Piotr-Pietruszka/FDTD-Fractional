@@ -1,4 +1,3 @@
-
 function field=readField(filename)
 
 

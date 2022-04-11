@@ -107,7 +107,6 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
         // Ex[(t+1)*Nz + k_source - 1] += pow(dt, alpha)/EPS_0/dz * Hy_inc[t];
         // Ex[(t+1)*Nz + k_source] = Ex_inc[t];
 
-        // double update_value = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
         double update_value = sin(t*dt*2*3.14/0.3e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
         Ex[t*Nz + k_source] += update_value; // soft source
     }

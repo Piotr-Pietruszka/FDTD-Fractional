@@ -13,10 +13,12 @@
 #define C_CONST 299792458.0
 
 void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
-                const double* Ex, double* Hy, const int t, const double alpha);
+                const double* Ex, double* Hy, const int t, const double alpha, 
+                const double* GL_coeff_arr);
 
 void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
-                double* Ex, const double* Hy, const int t, const double alpha);
+                double* Ex, const double* Hy, const int t, const double alpha, 
+                const double* GL_coeff_arr);
 
 void simulation(const double dz, const int Nz, const double dt, const int Nt,
                 const double alpha,

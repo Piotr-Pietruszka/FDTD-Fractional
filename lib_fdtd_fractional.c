@@ -11,10 +11,12 @@
  * @param Hy Hy field array
  * @param t current timestep
  * @param alpha fractional order of derivative
+ * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients
  * @return 
  */
 void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
-                const double* Ex, double* Hy, const int t, const double alpha)
+                const double* Ex, double* Hy, const int t, const double alpha,
+                const double* GL_coeff_arr)
 {
     int k = 0;
     int n = 0;
@@ -29,9 +31,7 @@ void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
         double w = 1.0;
         for(n = 0; n < t; n++)
         {
-            w = fracGLCoeff(w, alpha, n+1);
-            Hy[(t+1)*Nz + k] -= Hy[(t-n)*Nz + k] * w;
-            // Hy[(t+1)*Nz + k] += Hy[(t-n)*Nz + k] * pow(-1.0, n+1) * binomialCoeff(alpha, n+1);
+            Hy[(t+1)*Nz + k] -= Hy[(t-n)*Nz + k] * GL_coeff_arr[n];
         }
     }
 }
@@ -48,10 +48,12 @@ void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
  * @param Hy Hy field array
  * @param t current timestep
  * @param alpha fractional order of derivative
+ * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients
  * @return 
  */
 void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
-                double* Ex, const double* Hy, const int t, const double alpha)
+                double* Ex, const double* Hy, const int t, const double alpha,
+                const double* GL_coeff_arr)
 {
     int k = 1;
     int n = 0;
@@ -65,9 +67,7 @@ void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
         double w = 1.0;
         for(n = 0; n < t; n++)
         {
-            w = fracGLCoeff(w, alpha, n+1);
-            // Ex[(t+1)*Nz + k] += Ex[(t-n)*Nz + k] * pow(-1.0, n+1) * binomialCoeff(alpha, n+1);
-            Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * w;
+            Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * GL_coeff_arr[n];
         }      
     }
 }
@@ -92,23 +92,28 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
                 double* Ex_inc, double* Hy_inc)
 {
     int k_source = 300;
+
+    double* GL_coeff_arr = calloc(Nt, sizeof(double)); // GL[0]=w1, GL[1]=w2, ... 
+    GL_coeff_arr[0] = fracGLCoeff(1.0, alpha, 0+1); // GL_1
+    for(int n = 1; n < Nt; n++)
+        GL_coeff_arr[n] = fracGLCoeff(GL_coeff_arr[n-1], alpha, n+1);
     // main time loop
     for (int t = 0; t < Nt-1; t++)
     {
         Ex_inc[t] = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
 
-        HyUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha);
+        HyUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
         // TODO: tfsf Hy update
         // Hy[(t+1)*Nz + k_source - 1] += pow(dt, alpha)/MU_0/dz * Ex_inc[t];
-        // Hy[(t+1)*Nz + k_source - 1] = 0.0;
+        Hy[(t+1)*Nz + k_source - 1] = 0.0;
 
-        ExUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha);
+        ExUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
         // TODO: tfsf Ex update
         // Ex[(t+1)*Nz + k_source - 1] += pow(dt, alpha)/EPS_0/dz * Hy_inc[t];
-        // Ex[(t+1)*Nz + k_source] = Ex_inc[t];
+        Ex[(t+1)*Nz + k_source] = Ex_inc[t];
 
-        double update_value = sin(t*dt*2*3.14/0.3e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
-        Ex[t*Nz + k_source] += update_value; // soft source
+        // double update_value = sin(t*dt*2*3.14/0.3e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
+        // Ex[t*Nz + k_source] += update_value; // soft source
     }
 
     char filename[128];

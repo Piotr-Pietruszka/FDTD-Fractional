@@ -11,7 +11,7 @@ field = fread(fptr, [Nz, Nt],'double');
 writerObj = VideoWriter('YourAVI.avi');
 writerObj.FrameRate=1;
 open(writerObj);
-for t = 1:400:Nt
+for t = 1:10:500
     field_at_t = field(1:end, t);
     plot(field_at_t);
     title('E field amplitude');

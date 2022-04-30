@@ -5,7 +5,7 @@ spatial_temporal_dimensions =fread(fptr,2,'uint');
 
 Nz=spatial_temporal_dimensions(1);
 Nt=spatial_temporal_dimensions(2);
-field = fread(fptr, [Nz, Nt],'double');
+field = fread(fptr, [Nt, Nz],'double');
 
 
 writerObj = VideoWriter('FieldInTime.avi');
@@ -16,7 +16,7 @@ figure(2);
 ylim([min(field(:)) max(field(:))]);
 
 for t = 1:100:Nt
-    field_at_t = field(1:end, t);
+    field_at_t = field(t, 1:end);
     plot(field_at_t);
 %     ylim([min(field(:)) max(field(:))]);
     y_l = get(gca, 'YLim');

@@ -3,7 +3,7 @@
 /**
  * Update Hy field in 1D domain
  * 
- * @param dz - spatial step size
+ * @param dz spatial step size
  * @param Nz domain size (cells)
  * @param dt time step
  * @param Nt length of simulation (timesteps)
@@ -25,12 +25,14 @@ void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
     for(k = 0; k < Nz-1; k++)
     {
         // update based on Hy rotation
-        Hy[(t+1)*Nz + k] =  -pow(dt, alpha)/MU_0 * (Ex[t*Nz + k+1] - Ex[t*Nz + k])/dz;
+        // Hy[(t+1)*Nz + k] =  -pow(dt, alpha)/MU_0 * (Ex[t*Nz + k+1] - Ex[t*Nz + k])/dz;
+        Hy[t+1 + k*Nt] =  -pow(dt, alpha)/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
 
         // update based on previous Hy values (from GL derivative)
         for(n = 0; n < t; n++)
         {
-            Hy[(t+1)*Nz + k] -= Hy[(t-n)*Nz + k] * GL_coeff_arr[n];
+            // Hy[(t+1)*Nz + k] -= Hy[(t-n)*Nz + k] * GL_coeff_arr[n];
+            Hy[t+1 + k*Nt] -= Hy[t-n + k*Nt] * GL_coeff_arr[n];
         }
     }
 }
@@ -39,7 +41,7 @@ void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
 /**
  * Update Ex field in 1D domain
  * 
- * @param dz - spatial step size
+ * @param dz spatial step size
  * @param Nz domain size (cells)
  * @param dt time step
  * @param Nt length of simulation (timesteps)
@@ -60,12 +62,14 @@ void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
     for(k = 1; k < Nz; k++)
     {
         // update based on Hy rotation
-        Ex[(t+1)*Nz + k] = -pow(dt, alpha)/EPS_0* (Hy[(t+1)*Nz + k] - Hy[(t+1)*Nz + k-1]) / dz; // update based on Hy rotation
+        // Ex[(t+1)*Nz + k] = -pow(dt, alpha)/EPS_0* (Hy[(t+1)*Nz + k] - Hy[(t+1)*Nz + k-1]) / dz; // update based on Hy rotation
+        Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
         
         // update based on previous Ex values (from GL derivative)
         for(n = 0; n < t; n++)
         {
-            Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * GL_coeff_arr[n];
+            // Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * GL_coeff_arr[n];
+            Ex[t+1 + k*Nt] -= Ex[t-n + k*Nt] * GL_coeff_arr[n];
         }      
     }
 }
@@ -105,22 +109,20 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
 
         HyUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
         // TODO: tfsf Hy update
-        // Hy[(t+1)*Nz + k_source - 1] += pow(dt, alpha)/MU_0/dz * Ex_inc[t];
-        // Hy[(t+1)*Nz + k_source - 1] = 0.0;
-        // Hy_l = Hy_r
-        Hy[(t+1)*Nz + k_source - 1] = -Hy[(t+1)*Nz + k_source]; // Ex field update as if wave travelled in left direction
+
+        // Hy[(t+1)*Nz + k_source - 1] = -Hy[(t+1)*Nz + k_source]; // Ex field update as if wave travelled in left direction
+        Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt];
+
         ExUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
 
         // double update_value = sin(t*dt*2*3.14/0.3e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
-        Ex[(t+1)*Nz + k_source] += Ex_source[t+1]; // soft source
-
-        Ex[(t+1)*Nz + k_source - 1] = 0.0; // remove left-travelling wave
-        Hy[(t+1)*Nz + k_source - 1] = 0.0;
-        // Ex[(t+1)*Nz + k_source - 1] += pow(dt, alpha)/EPS_0/dz * Hy_inc[t];
-        // Ex[(t+1)*Nz + k_source] = Ex_inc[t];
-        // Hy_l = 0.0;
+        // Ex[(t+1)*Nz + k_source] += Ex_source[t+1]; // soft source
+        // Ex[(t+1)*Nz + k_source - 1] = 0.0; // remove left-travelling wave
+        // Hy[(t+1)*Nz + k_source - 1] = 0.0;
         
-        
+        Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
+        Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
+        Hy[t+1 + (k_source-1)*Nt] = 0.0;
     }
 
     char filename[128];

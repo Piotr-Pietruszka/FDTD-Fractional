@@ -8,6 +8,6 @@ fptr=fopen(filename);
 spatial_temporal_dimensions =fread(fptr,2,'uint');
 Nz=spatial_temporal_dimensions(1);
 Nt=spatial_temporal_dimensions(2);
-field = fread(fptr, [Nz, Nt],'double');
+field = fread(fptr, [Nt, Nz],'double');
 
-field_at_t = field(1:end, t);
+field_at_t = field(t, 1:end);

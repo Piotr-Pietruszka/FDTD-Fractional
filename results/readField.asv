@@ -7,8 +7,8 @@ spatial_temporal_dimensions =fread(fptr,2,'uint');
 Nz=spatial_temporal_dimensions(1);
 Nt=spatial_temporal_dimensions(2);
     
-field = fread(fptr, [Nt, Nz],'double');
-% field = field';
+field = fread(fptr, [Nz, Nt],'double');
+field =
 
 mesh(field);
 view(0,90);
@@ -17,8 +17,9 @@ size(field)
 
 
 title('E field amplitude');
-xlabel('z (cells)');
-ylabel('t (steps)');
+xlabel('t (steps)');
+ylabel('z (cells)');
+
 
 % % % Linear
 colorbar;

@@ -36,13 +36,13 @@ int main()
     sprintf(filename, ".\\results\\source.bin");
     saveFieldToBinary(filename, Ex_source, 1, Nt);
 
-    clock_t start_time, end_time;
-    start_time = clock();
+    double start_time, end_time;
+    start_time = omp_get_wtime();
     // return 1;
     simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source);
 
-    end_time = clock();
-    double sim_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
-    printf("simulation time: %lf\n", sim_time);
+    end_time = omp_get_wtime();
+    double sim_time = end_time - start_time;
+    printf("simulation time: %lf s\n", sim_time);
 
 }

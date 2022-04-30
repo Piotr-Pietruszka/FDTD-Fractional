@@ -28,7 +28,6 @@ void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
         Hy[(t+1)*Nz + k] =  -pow(dt, alpha)/MU_0 * (Ex[t*Nz + k+1] - Ex[t*Nz + k])/dz;
 
         // update based on previous Hy values (from GL derivative)
-        double w = 1.0;
         for(n = 0; n < t; n++)
         {
             Hy[(t+1)*Nz + k] -= Hy[(t-n)*Nz + k] * GL_coeff_arr[n];
@@ -64,7 +63,6 @@ void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
         Ex[(t+1)*Nz + k] = -pow(dt, alpha)/EPS_0* (Hy[(t+1)*Nz + k] - Hy[(t+1)*Nz + k-1]) / dz; // update based on Hy rotation
         
         // update based on previous Ex values (from GL derivative)
-        double w = 1.0;
         for(n = 0; n < t; n++)
         {
             Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * GL_coeff_arr[n];
@@ -89,36 +87,47 @@ void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
 void simulation(const double dz, const int Nz, const double dt, const int Nt,
                 const double alpha,
                 double* Ex, double* Hy,
-                double* Ex_inc, double* Hy_inc)
+                double* Ex_source)
 {
-    int k_source = 300;
+    int k_source = 100;
 
+    // Precalculate GL coefficients
     double* GL_coeff_arr = calloc(Nt, sizeof(double)); // GL[0]=w1, GL[1]=w2, ... 
     GL_coeff_arr[0] = fracGLCoeff(1.0, alpha, 0+1); // GL_1
     for(int n = 1; n < Nt; n++)
         GL_coeff_arr[n] = fracGLCoeff(GL_coeff_arr[n-1], alpha, n+1);
+
     // main time loop
     for (int t = 0; t < Nt-1; t++)
     {
-        Ex_inc[t] = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
+        // Ex_inc[t] = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
+        // Hy_inc[t] = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
 
         HyUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
         // TODO: tfsf Hy update
         // Hy[(t+1)*Nz + k_source - 1] += pow(dt, alpha)/MU_0/dz * Ex_inc[t];
-        Hy[(t+1)*Nz + k_source - 1] = 0.0;
-
+        // Hy[(t+1)*Nz + k_source - 1] = 0.0;
+        // Hy_l = Hy_r
+        Hy[(t+1)*Nz + k_source - 1] = -Hy[(t+1)*Nz + k_source]; // Ex field update as if wave travelled in left direction
         ExUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-        // TODO: tfsf Ex update
-        // Ex[(t+1)*Nz + k_source - 1] += pow(dt, alpha)/EPS_0/dz * Hy_inc[t];
-        Ex[(t+1)*Nz + k_source] = Ex_inc[t];
 
         // double update_value = sin(t*dt*2*3.14/0.3e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
-        // Ex[t*Nz + k_source] += update_value; // soft source
+        Ex[(t+1)*Nz + k_source] += Ex_source[t+1]; // soft source
+
+        Ex[(t+1)*Nz + k_source - 1] = 0.0; // remove left-travelling wave
+        Hy[(t+1)*Nz + k_source - 1] = 0.0;
+        // Ex[(t+1)*Nz + k_source - 1] += pow(dt, alpha)/EPS_0/dz * Hy_inc[t];
+        // Ex[(t+1)*Nz + k_source] = Ex_inc[t];
+        // Hy_l = 0.0;
+        
+        
     }
 
     char filename[128];
     sprintf(filename, ".\\results\\Ex.bin");
     saveFieldToBinary(filename, Ex, Nz, Nt);
+    sprintf(filename, ".\\results\\Hy.bin");
+    saveFieldToBinary(filename, Hy, Nz, Nt);
 }
 
 

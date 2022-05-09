@@ -1,50 +1,65 @@
 function plotSource(filename)
 
 
-% dt = 3.302285e-017;
-dt = 2.311599e-017;
 % Load source from file
 fptr=fopen(filename);
 spatial_temporal_dimensions =fread(fptr,2,'uint');
 
-Nz=spatial_temporal_dimensions(1);
-Nt=spatial_temporal_dimensions(2);
+Nz = spatial_temporal_dimensions(1);
+Nt = spatial_temporal_dimensions(2);
+dz = fread(fptr,1,'double');
+dt = fread(fptr,1,'double');
 source_in_time = fread(fptr, [Nz, Nt],'double');
-
+fclose(fptr);
 
 % crop source in time
-Nt=700;
+% Nt=700;
 source_in_time = source_in_time(1:Nt);
 
+% Alternatively - chosen point at domain
+fptr=fopen("Ex.bin");
+spatial_temporal_dimensions =fread(fptr,2,'uint');
+Nz=spatial_temporal_dimensions(1);
+Nt=spatial_temporal_dimensions(2);
+dz = fread(fptr,1,'double');
+dt = fread(fptr,1,'double');
+field = fread(fptr, [Nt, Nz],'double');
+source_in_time = field(1:end, 3333);
+source_in_time = source_in_time(1:Nt);
+fclose(fptr);
+% ------------
 
 t=(0:1:Nt-1)*dt; % t in secs
+t=(0:1:Nt-1); % cells
 % size(source_in_time)
 % size(t)
 
+figure(1)
 plot(t, source_in_time); 
 title('E field amplitude');
 xlabel('t (s)');
 
 % Spectrum of the source
-figure(2)
 y = fft(source_in_time, Nt);
 y = fftshift(y); % shift f transform
 fs = 1/dt;
 fshift = (-Nt/2:Nt/2-1)*(fs/Nt); % domain in Hz
-% f = (0:length(y)-1)*fs/length(y);
-% plot(f, abs(y));
 size(fshift)
-% crop frequency - get second only right half
-ix1 = find(fshift>=3e14, 1)
-ix2 = find(fshift>=9e14, 1)
-fshift = fshift(ix1:ix2);
-y = y(ix1:ix2);
 
+% crop frequency - get only right half
+% ix1 = find(fshift>=0, 1)
+% fshift = fshift(ix1:end);
+% y = y(ix1:end);
+
+% ix1 = find(fshift>=3e14, 1)
+% ix2 = find(fshift>=9e14, 1)
+% fshift = fshift(ix1:ix2);
+% y = y(ix1:ix2);
+
+figure(2)
 plot(fshift, abs(y)/max(abs(y))*0.13)
-
-% plot(source_in_time);
-% title('E field amplitude');
-% xlabel('t (steps)');
+title('Source spectrum');
+xlabel('f (Hz)');
 
 
 end

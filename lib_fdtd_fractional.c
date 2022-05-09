@@ -127,9 +127,9 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
 
     char filename[128];
     sprintf(filename, ".\\results\\Ex.bin");
-    saveFieldToBinary(filename, Ex, Nz, Nt);
+    saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt);
     sprintf(filename, ".\\results\\Hy.bin");
-    saveFieldToBinary(filename, Hy, Nz, Nt);
+    saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt);
 }
 
 
@@ -145,7 +145,9 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
 void saveFieldToBinary(const char *filename,
                         const double *data,
                         const unsigned int Nz,
-                        const unsigned int Nt)
+                        const unsigned int Nt,
+                        const double dz,
+                        const double dt)
 {
     FILE *fptr;
 	
@@ -158,6 +160,9 @@ void saveFieldToBinary(const char *filename,
 	// Writing dimensions of simulation domain to file
 	fwrite(&Nz, sizeof(unsigned int), 1, fptr);
 	fwrite(&Nt, sizeof(unsigned int), 1, fptr);
+    fwrite(&dz, sizeof(double), 1, fptr);
+	fwrite(&dt, sizeof(double), 1, fptr);
+
 
 	fwrite(data, sizeof(double), Nz*Nt, fptr);
 	fclose(fptr);

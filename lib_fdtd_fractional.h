@@ -28,7 +28,9 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
 void saveFieldToBinary(const char *filename,
 							const double *data,
 							const unsigned int Nz,
-							const unsigned int Nt);
+							const unsigned int Nt,
+                            const double dz,
+                            const double dt);
 
 double binomialCoeff(const double alpha, const int k);
 

@@ -75,6 +75,52 @@ void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
 }
 
 
+/**
+ * Classical (non-fractional) Hy field update in 1D domain
+ * 
+ * @param dz spatial step size
+ * @param Nz domain size (cells)
+ * @param dt time step
+ * @param Nt length of simulation (timesteps)
+ * @param Ex Ex field array 
+ * @param Hy Hy field array
+ * @param t current timestep
+ * @return 
+ */
+void HyClassicUpdate(const double dz, const int Nz, const double dt, const int Nt,
+                     const double* Ex, double* Hy, const int t)
+{
+    int k = 1;
+#pragma omp parallel for private(k)
+    for(k = 1; k < Nz-1; k++)
+    {
+        Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
+    }
+}
+
+
+/**
+ * Classical (non-fractional) Ex field update in 1D domain
+ * 
+ * @param dz spatial step size
+ * @param Nz domain size (cells)
+ * @param dt time step
+ * @param Nt length of simulation (timesteps)
+ * @param Ex Ex field array 
+ * @param Hy Hy field array
+ * @param t current timestep
+ * @return 
+ */
+void ExClassicUpdate(const double dz, const int Nz, const double dt, const int Nt,
+                     double* Ex, const double* Hy, const int t)
+{
+    int k = 1;
+#pragma omp parallel for private(k)
+    for(k = 1; k < Nz; k++)
+    {
+        Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
+    }
+}
 
 /**
  * simulation
@@ -101,6 +147,7 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
     for(int n = 1; n < Nt; n++)
         GL_coeff_arr[n] = fracGLCoeff(GL_coeff_arr[n-1], alpha, n+1);
 
+    k_source = (int) (3.03e-6/dz);
     // main time loop
     for (int t = 0; t < Nt-1; t++)
     {
@@ -108,12 +155,13 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
         // Hy_inc[t] = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
 
         HyUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-        // TODO: tfsf Hy update
+        // HyClassicUpdate(dz, Nz, dt, Nt, Ex, Hy, t);
 
-        // Hy[(t+1)*Nz + k_source - 1] = -Hy[(t+1)*Nz + k_source]; // Ex field update as if wave travelled in left direction
-        Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt];
+        // Hy[(t+1)*Nz + k_source - 1] = -Hy[(t+1)*Nz + k_source]; 
+        Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
 
         ExUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
+        // ExClassicUpdate(dz, Nz, dt, Nt, Ex, Hy, t);
 
         // double update_value = sin(t*dt*2*3.14/0.3e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
         // Ex[(t+1)*Nz + k_source] += Ex_source[t+1]; // soft source
@@ -171,12 +219,12 @@ void saveFieldToBinary(const char *filename,
 
 /**
  * Calculate next coefficient for Grunwald-Letnikov derivative
- * based on previous coefficient, order of derivative and  
+ * based on previous coefficient, order of derivative and coefficient number 
  * 
  * @param w previous coefficient
  * @param alpha fractional order of derivative 
- * @param n 
- * @return new coefficient
+ * @param n coefficient number (index)
+ * @return new (next) coefficient
  */
 double fracGLCoeff(const double w, const double alpha, const int n)
 {
@@ -188,7 +236,7 @@ double fracGLCoeff(const double w, const double alpha, const int n)
  * Calculate generalised binomial coefficient
  * 
  * @param alpha fractinal order of derivative
- * @param k
+ * @param k coefficient number (index)
  * @return binomial coefficient
  */
 double binomialCoeff(const double alpha, const int k)

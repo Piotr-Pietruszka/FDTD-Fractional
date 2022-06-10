@@ -20,6 +20,12 @@ void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
                 double* Ex, const double* Hy, const int t, const double alpha, 
                 const double* GL_coeff_arr);
 
+void HyClassicUpdate(const double dz, const int Nz, const double dt, const int Nt,
+                     const double* Ex, double* Hy, const int t);
+
+void ExClassicUpdate(const double dz, const int Nz, const double dt, const int Nt,
+                     double* Ex, const double* Hy, const int t);
+
 void simulation(const double dz, const int Nz, const double dt, const int Nt,
                 const double alpha,
                 double* Ex, double* Hy,

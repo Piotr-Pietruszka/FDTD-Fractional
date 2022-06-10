@@ -4,24 +4,33 @@ int main()
 {
 
     // domain constants
-    double dz = 0.03e-6;
+    // double dz = 0.03e-6;
+    double dz = 0.02e-6;
 
-    double dt = 0.2*0.99*dz/C_CONST;
+    // double dt = 0.99*dz/C_CONST;
+    // double dt = 0.25*0.99*dz/C_CONST;
+    // double dt = 0.6*0.99*dz/C_CONST;
+    double dt = 3.0857e-17;
     // double dt = 0.2*0.99*dz/C_CONST; // 0.99
     // double dt = 1e-18;
 
-    double Lz = 170.0e-6;
+    double Lz = 150.0e-6;
+    // double Lz = 190.0e-6;
     int Nz = (int) (Lz/dz);
-    // double T = 25e-14;
-    double T = 5e-14;
+    double T = 35e-14;
+    // double T = 20e-14;
+    // double T = 1.3307e-14;
     int Nt =  (int) (T/dt);
+    
+    // double alpha = 0.97;
     double alpha = 0.98;
-    // double alpha = 1.0;
-
+    
+    printf("alpha= %f\n", alpha);
     printf("Nz= %d\n", Nz);
     printf("Nt= %d\n", Nt);
     printf("dz= %e\n", dz);
     printf("dt= %e\n", dt);
+    printf("k_source= %d\n", (int) (3.03e-6/dz));
 
     // field arrays - for whole domain and simulation time
     double* Ex = calloc(Nz*Nt, sizeof(double));
@@ -29,12 +38,22 @@ int main()
 
     double* Ex_source = calloc(Nt, sizeof(double));
     
+    // TEMP - init conditions
+    // Nt =  20;
+    // Ex[0+ 501*Nt] = 1.0;
 
     // Source
     for (int t = 0; t < Nt-1; t++)
     {
         // Ex_source[t] = sin(t*dt*2*3.14/0.175e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) ); // modulated gaussian
-        Ex_source[t] = cos((t*dt-0.75e-14)*2*3.14/0.175e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) ); // modulated gaussian
+        // Ex_source[t] = cos((t*dt-0.75e-14)*2*3.14/0.175e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) ); // modulated gaussian
+        // Ex_source[t] = dt/2.3281e-17*cos((t*dt-7.9470e-15)*2*3.14/0.175e-14) * exp( -pow((t*dt-7.9470e-15) / (0.2e-14), 2.0) ); // modulated gaussian
+
+        // Ex_source[t] = dt/2.3281e-17*cos((t*dt-7.9577e-15)*3.7071e+15) * exp( -pow((t*dt-7.9577e-15) / (1.9894e-15), 2.0) ); // modulated gaussian
+        double delay = 7.957747154594768e-15 - dt/2.0;
+        Ex_source[t] = 1/3.2*1/0.4624*1/1.473*0.9983/1.002*dt/2.3281e-17*cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
+
+        // Ex_source[t] = dt/2.3281e-17*cos((t*dt-7.957747154594768e-15)*3.707079331235956e+15) * exp( -pow((t*dt-7.957747154594768e-15) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
         // Ex_source[t] = (t*dt > 0.3e-14 && t*dt < 0.7e-14) ? 1.0 : 0.0; // rectangle - doesn't work
 
         // Triangle

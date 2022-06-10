@@ -1,4 +1,4 @@
-function plotFieldAtPositions(filename, z_points)
+function field_at_z=plotFieldAtPositions(filename, z_points)
 
 fptr=fopen(filename);
 

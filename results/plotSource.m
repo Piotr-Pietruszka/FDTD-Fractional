@@ -1,4 +1,4 @@
-function plotSource(filename)
+function [t_sec, source_in_time]=plotSource(filename)
 
 
 % Load source from file
@@ -24,17 +24,17 @@ Nt=spatial_temporal_dimensions(2);
 dz = fread(fptr,1,'double');
 dt = fread(fptr,1,'double');
 field = fread(fptr, [Nt, Nz],'double');
-source_in_time = field(1:end, 3333);
+source_in_time = field(1:end, 101);
 source_in_time = source_in_time(1:Nt);
 fclose(fptr);
 % ------------
 
-t=(0:1:Nt-1)*dt; % t in secs
+t_sec=(0:1:Nt-1)*dt; % t in secs
 t=(0:1:Nt-1); % cells
 % size(source_in_time)
 % size(t)
 
-figure(1)
+figure()
 plot(t, source_in_time); 
 title('E field amplitude');
 xlabel('t (s)');
@@ -56,7 +56,7 @@ size(fshift)
 % fshift = fshift(ix1:ix2);
 % y = y(ix1:ix2);
 
-figure(2)
+figure()
 plot(fshift, abs(y)/max(abs(y))*0.13)
 title('Source spectrum');
 xlabel('f (Hz)');

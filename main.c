@@ -45,16 +45,8 @@ int main()
     // Source
     for (int t = 0; t < Nt-1; t++)
     {
-        // Ex_source[t] = sin(t*dt*2*3.14/0.175e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) ); // modulated gaussian
-        // Ex_source[t] = cos((t*dt-0.75e-14)*2*3.14/0.175e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) ); // modulated gaussian
-        // Ex_source[t] = dt/2.3281e-17*cos((t*dt-7.9470e-15)*2*3.14/0.175e-14) * exp( -pow((t*dt-7.9470e-15) / (0.2e-14), 2.0) ); // modulated gaussian
-
-        // Ex_source[t] = dt/2.3281e-17*cos((t*dt-7.9577e-15)*3.7071e+15) * exp( -pow((t*dt-7.9577e-15) / (1.9894e-15), 2.0) ); // modulated gaussian
         double delay = 7.957747154594768e-15 - dt/2.0;
         Ex_source[t] = 1/3.2*1/0.4624*1/1.473*0.9983/1.002*dt/2.3281e-17*cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
-
-        // Ex_source[t] = dt/2.3281e-17*cos((t*dt-7.957747154594768e-15)*3.707079331235956e+15) * exp( -pow((t*dt-7.957747154594768e-15) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
-        // Ex_source[t] = (t*dt > 0.3e-14 && t*dt < 0.7e-14) ? 1.0 : 0.0; // rectangle - doesn't work
 
         // Triangle
         // if(t*dt > 0.4e-14 && t*dt < 0.5e-14)
@@ -73,7 +65,7 @@ int main()
 
     double start_time, end_time;
     start_time = omp_get_wtime();
-    // return 1;
+
     simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source);
 
     end_time = omp_get_wtime();

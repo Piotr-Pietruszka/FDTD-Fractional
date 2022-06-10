@@ -157,16 +157,10 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
         HyUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
         // HyClassicUpdate(dz, Nz, dt, Nt, Ex, Hy, t);
 
-        // Hy[(t+1)*Nz + k_source - 1] = -Hy[(t+1)*Nz + k_source]; 
         Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
 
         ExUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
         // ExClassicUpdate(dz, Nz, dt, Nt, Ex, Hy, t);
-
-        // double update_value = sin(t*dt*2*3.14/0.3e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
-        // Ex[(t+1)*Nz + k_source] += Ex_source[t+1]; // soft source
-        // Ex[(t+1)*Nz + k_source - 1] = 0.0; // remove left-travelling wave
-        // Hy[(t+1)*Nz + k_source - 1] = 0.0;
         
         Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
         Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave

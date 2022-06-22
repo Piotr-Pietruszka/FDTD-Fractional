@@ -17,7 +17,7 @@ open(writerObj);
 figure(2);
 ylim([min(field(:)) max(field(:))]);
 
-for t = 1:1:Nt
+for t = 1:100:Nt
 % for t = 1:10:600
     figure(2);
     if exist('dz') > 0

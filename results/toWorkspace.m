@@ -1,8 +1,8 @@
 % Read results
 
 
-% filename = "Ex.bin";
 filename = "Ex.bin";
+% filename = "Ex_3_0757e17.bin";
 fptr=fopen(filename);
 spatial_temporal_dimensions =fread(fptr,2,'uint');
 Nz=spatial_temporal_dimensions(1);

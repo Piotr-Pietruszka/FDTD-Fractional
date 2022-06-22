@@ -12,24 +12,25 @@
 #define EPS_0 8.85418781762e-12
 #define C_CONST 299792458.0
 
-void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
+void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
                 const double* Ex, double* Hy, const int t, const double alpha, 
                 const double* GL_coeff_arr);
 
-void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
+void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
                 double* Ex, const double* Hy, const int t, const double alpha, 
                 const double* GL_coeff_arr);
 
-void HyClassicUpdate(const double dz, const int Nz, const double dt, const int Nt,
+void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
                      const double* Ex, double* Hy, const int t);
 
-void ExClassicUpdate(const double dz, const int Nz, const double dt, const int Nt,
+void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
                      double* Ex, const double* Hy, const int t);
 
 void simulation(const double dz, const int Nz, const double dt, const int Nt,
                 const double alpha,
                 double* Ex, double* Hy,
-                double* Ex_source);
+                double* Ex_source, const int k_source, 
+                int save_result);
 
 void saveFieldToBinary(const char *filename,
 							const double *data,
@@ -41,3 +42,11 @@ void saveFieldToBinary(const char *filename,
 double binomialCoeff(const double alpha, const int k);
 
 double fracGLCoeff(const double w, const double alpha, const int n);
+
+void checkStability();
+
+double findMaxAbsValue(const int Nz, const int Nt, double* Ex, double* Hy);
+
+
+#define ALPHA_ST_NUM 14
+#define DT_ST_NUM 16

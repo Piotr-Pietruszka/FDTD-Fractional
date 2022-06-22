@@ -17,16 +17,17 @@ fclose(fptr);
 source_in_time = source_in_time(1:Nt);
 
 % Alternatively - chosen point at domain
-fptr=fopen("Ex.bin");
-spatial_temporal_dimensions =fread(fptr,2,'uint');
-Nz=spatial_temporal_dimensions(1);
-Nt=spatial_temporal_dimensions(2);
-dz = fread(fptr,1,'double');
-dt = fread(fptr,1,'double');
-field = fread(fptr, [Nt, Nz],'double');
-source_in_time = field(1:end, 101);
-source_in_time = source_in_time(1:Nt);
-fclose(fptr);
+% ------------
+% fptr=fopen("Ex.bin");
+% spatial_temporal_dimensions =fread(fptr,2,'uint');
+% Nz=spatial_temporal_dimensions(1);
+% Nt=spatial_temporal_dimensions(2);
+% dz = fread(fptr,1,'double');
+% dt = fread(fptr,1,'double');
+% field = fread(fptr, [Nt, Nz],'double');
+% source_in_time = field(1:end, 101);
+% source_in_time = source_in_time(1:Nt);
+% fclose(fptr);
 % ------------
 
 t_sec=(0:1:Nt-1)*dt; % t in secs

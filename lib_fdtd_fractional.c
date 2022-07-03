@@ -11,7 +11,7 @@
  * @param Hy Hy field array
  * @param t current timestep
  * @param alpha fractional order of derivative
- * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients
+ * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients, starts at w1
  * @return 
  */
 void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
@@ -20,21 +20,34 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
 {
     int k = 0;
     int n = 0;
-    
+#ifdef MUR_CONDITION    
 #pragma omp parallel for private(k)
     for(k = 0; k < Nz-1; k++)
     {
         // update based on Hy rotation
-        // Hy[(t+1)*Nz + k] =  -pow(dt, alpha)/MU_0 * (Ex[t*Nz + k+1] - Ex[t*Nz + k])/dz;
         Hy[t+1 + k*Nt] =  -pow(dt, alpha)/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
 
         // update based on previous Hy values (from GL derivative)
         for(n = 0; n < t; n++)
         {
-            // Hy[(t+1)*Nz + k] -= Hy[(t-n)*Nz + k] * GL_coeff_arr[n];
             Hy[t+1 + k*Nt] -= Hy[t-n + k*Nt] * GL_coeff_arr[n];
         }
     }
+#else 
+#pragma omp parallel for private(k)
+    for(k = 0; k < Nz-1; k++)
+    {
+        // update based on Hy rotation
+        Hy[t+1 + k*Nt] =  -pow(dt, alpha)/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
+
+        // update based on previous Hy values (from GL derivative)
+        for(n = 0; n < t; n++)
+        {
+            Hy[t+1 + k*Nt] -= Hy[t-n + k*Nt] * GL_coeff_arr[n];
+        }
+    }
+#endif
+
 }
 
 
@@ -49,7 +62,7 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
  * @param Hy Hy field array
  * @param t current timestep
  * @param alpha fractional order of derivative
- * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients
+ * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients, starts at w1
  * @return 
  */
 void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
@@ -58,20 +71,41 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
 {
     int k = 1;
     int n = 0;
+#ifdef MUR_CONDITION
 #pragma omp parallel for private(k)
     for(k = 1; k < Nz; k++)
     {
         // update based on Hy rotation
-        // Ex[(t+1)*Nz + k] = -pow(dt, alpha)/EPS_0* (Hy[(t+1)*Nz + k] - Hy[(t+1)*Nz + k-1]) / dz; // update based on Hy rotation
         Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
         
         // update based on previous Ex values (from GL derivative)
         for(n = 0; n < t; n++)
         {
-            // Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * GL_coeff_arr[n];
+            Ex[t+1 + k*Nt] -= Ex[t-n + k*Nt] * GL_coeff_arr[n];
+        }
+    }
+    // Mur condition
+    Ex[t+1 + 0*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[t+1 + 1*Nt] +
+                     (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[t + 1*Nt] - Ex[t + 0*Nt]);
+    for(n = 0; n < t; n++)
+    {
+        Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 1*Nt];
+        Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 0*Nt];
+    }   
+#else 
+#pragma omp parallel for private(k)
+    for(k = 1; k < Nz; k++)
+    {
+        // update based on Hy rotation
+        Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
+        
+        // update based on previous Ex values (from GL derivative)
+        for(n = 0; n < t; n++)
+        {
             Ex[t+1 + k*Nt] -= Ex[t-n + k*Nt] * GL_coeff_arr[n];
         }      
     }
+#endif
 }
 
 
@@ -91,13 +125,20 @@ void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
                      const double* Ex, double* Hy, const int t)
 {
     int k = 1;
+#ifdef MUR_CONDITION
 #pragma omp parallel for private(k)
-    for(k = 1; k < Nz-1; k++)
+    for(k = 0; k < Nz-1; k++)
     {
         Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
     }
+#else
+#pragma omp parallel for private(k)
+    for(k = 0; k < Nz-1; k++)
+    {
+        Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
+    }
+#endif
 }
-
 
 /**
  * Classical (non-fractional) Ex field update in 1D domain
@@ -115,11 +156,24 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
                      double* Ex, const double* Hy, const int t)
 {
     int k = 1;
+
+#ifdef MUR_CONDITION
 #pragma omp parallel for private(k)
     for(k = 1; k < Nz; k++)
     {
         Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
     }
+    Ex[t+1 + 0*Nt] = Ex[t + 1*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + 1*Nt] - Ex[t + 0*Nt]);
+    // Ex[t+1 + 0*Nt] = Ex[t + 1*Nt] + (1-1)/(0.99+1) * (Ex[t+1 + 1*Nt] - Ex[t+1 + 0*Nt]);
+
+#else
+#pragma omp parallel for private(k)
+    for(k = 1; k < Nz; k++)
+    {
+        Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
+    }
+#endif
+
 }
 
 /**
@@ -154,17 +208,21 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
         // Ex_inc[t] = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
         // Hy_inc[t] = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
 
+#ifdef FRACTIONAL_SIM
         HyUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-        // HyClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
+#else
+        HyClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
+#endif
+        // Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
 
-        Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
-
+#ifdef FRACTIONAL_SIM
         ExUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-        // ExClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
-        
+#else
+        ExClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
+#endif        
         Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
-        Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
-        Hy[t+1 + (k_source-1)*Nt] = 0.0;
+        // Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
+        // Hy[t+1 + (k_source-1)*Nt] = 0.0;
     }
 
     if(save_result)
@@ -233,7 +291,7 @@ double fracGLCoeff(const double w, const double alpha, const int n)
 /**
  * Calculate generalised binomial coefficient
  * 
- * @param alpha fractinal order of derivative
+ * @param alpha fractional order of derivative
  * @param k coefficient number (index)
  * @return binomial coefficient
  */
@@ -242,15 +300,19 @@ double binomialCoeff(const double alpha, const int k)
     return tgamma(alpha+1)/tgamma(alpha+1-k)/tgamma(k+1);
 }
 
+
+/**
+ * Find smallest dt for which siumlation is unstable, for different orders (alpha).
+ * For every considered order alpha multiple short simulations, with dt values near analytical
+ * stability boundary are performed.
+ * Simulation is considered unstable if max value of abs(Ex) exceeds certain treshold.
+ * 
+ */
 void checkStability()
 {
     double alpha_array[ALPHA_ST_NUM] = {0.995, 0.99, 0.98, 0.97, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.51};
     double unstable_dt_array[ALPHA_ST_NUM] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}; // smallest dt, for which simulation is unstable
 
-    
-    // double alpha_array[ALPHA_ST_NUM] =       {0.85,  0.8, 0.75, 0.7,  0.65};
-    // double unstable_dt_array[ALPHA_ST_NUM] = {-1.0, -1.0, -1.0, -1.0, -1.0};
-    // {0.995, 0.99, 0.98};
     int Nz = 120;
     int Nt =  20;
     int k_source = 60;
@@ -277,28 +339,17 @@ void checkStability()
             double* Hy = calloc(Nz*Nt, sizeof(double));
             double* Ex_source = calloc(Nt, sizeof(double));
 
-            // Source
-            // int k_source = (int) (3.03e-6/dz);
-            // for (int t = 0; t < Nt-1; t++)
-            // {
-            //     double delay = 7.957747154594768e-15 - dt/2.0;
-            //     Ex_source[t] = 1.0/1.444*dt/2.3281e-17*cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
-            // }
-
-
             // init condition
             Ex[0+ k_source*Nt] = 1.0;
 
             // perform short simulation
             simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, 1);
-            
-            if(i ==4 && j==12) // TEMP
-            {
-                printf("sfd\n");
-            }
-            // if max_value greater than init value - there is growth and simulation is unstable
-            double max_value = findMaxAbsValue(Nz, Nt, Ex, Hy);
-            if(fabs(max_value) > 10.0) // small margin - 0.001 - to make sure init value is not included
+
+            // If max_value greater than treshold - there is growth and simulation is unstable
+            // Field value can exceed init value for first timesteps, but it decreases later.
+            // Thats why greater threshold was chosen
+            double max_value = findMaxAbsValue(Nz, Nt, Ex);
+            if(fabs(max_value) > 10.0)
             {
                 if(unstable_dt < 0.0)
                     unstable_dt = dt;
@@ -323,13 +374,21 @@ void checkStability()
     printf("%e]\n", unstable_dt_array[ALPHA_ST_NUM-1]);
 }
 
-double findMaxAbsValue(const int Nz, const int Nt, double* Ex, double* Hy)
+
+/**
+ * Find maximum absolute value in field array
+ * 
+ * @param Nz space size of array
+ * @param Nt temporal size of array
+ * @param Ex field array
+ * @return maximum value of filed in given array
+ */
+double findMaxAbsValue(const int Nz, const int Nt, double* Ex)
 {
     double max_value = 0.0;
     int change_counter = 0;
     for(int i=0; i < Nt*Nz; i ++)
     {
-        double temp_abs = fabs(Ex[i]); // TEMP
         if(fabs(Ex[i]) > fabs(max_value))
         {
             max_value = Ex[i];

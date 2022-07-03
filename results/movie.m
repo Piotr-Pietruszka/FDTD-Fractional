@@ -17,7 +17,10 @@ open(writerObj);
 figure(2);
 ylim([min(field(:)) max(field(:))]);
 
-for t = 1:100:Nt
+crop = false;
+% crop = true;
+Nz_crop = 200;
+for t = 1:50:Nt
 % for t = 1:10:600
     figure(2);
     if exist('dz') > 0
@@ -27,7 +30,12 @@ for t = 1:100:Nt
         z_arr = (1:Nz);
         xl = 'z [cells]';
     end
+    
     field_at_t = field(t, 1:end);
+    if crop
+        z_arr = z_arr(1:Nz_crop);
+        field_at_t = field_at_t(1:Nz_crop);
+    end
     plot(z_arr, field_at_t);
     xlabel(xl);
     y_l = get(gca, 'YLim');

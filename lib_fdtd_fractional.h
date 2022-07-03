@@ -12,6 +12,13 @@
 #define EPS_0 8.85418781762e-12
 #define C_CONST 299792458.0
 
+#define ALPHA_ST_NUM 14
+#define DT_ST_NUM 16
+
+#define MUR_CONDITION
+#define FRACTIONAL_SIM
+
+
 void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
                 const double* Ex, double* Hy, const int t, const double alpha, 
                 const double* GL_coeff_arr);
@@ -45,8 +52,6 @@ double fracGLCoeff(const double w, const double alpha, const int n);
 
 void checkStability();
 
-double findMaxAbsValue(const int Nz, const int Nt, double* Ex, double* Hy);
+double findMaxAbsValue(const int Nz, const int Nt, double* Ex);
 
 
-#define ALPHA_ST_NUM 14
-#define DT_ST_NUM 16

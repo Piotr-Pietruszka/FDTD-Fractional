@@ -11,10 +11,12 @@ int main()
     // double dt = 0.25*0.99*dz/C_CONST;
     // double dt = 0.6*0.99*dz/C_CONST;
 
-    double dt = 2.0429e-17; //3.0757e-17; // 2.3068e-17
-
-    // double dt = 0.2*0.99*dz/C_CONST; // 0.99
-    // double dt = 1e-18;
+#ifdef FRACTIONAL_SIM
+    double dt_analytical = 4.5475e-17;
+    double dt = 0.999*dt_analytical; //3.0757e-17; // 2.3068e-17
+#else
+    double dt = 0.99999*dz/C_CONST; 
+#endif
 
     double Lz = 150.0e-6;
     // double Lz = 190.0e-6;
@@ -53,7 +55,7 @@ int main()
     // Ex[0+ 501*Nt] = 1.0;
 
     // Source
-    int k_source = (int) (3.03e-6/dz);
+    int k_source = 400;//(int) (3.03e-6/dz);
     for (int t = 0; t < Nt-1; t++)
     {
         double delay = 7.957747154594768e-15 - dt/2.0;

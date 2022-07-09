@@ -6,35 +6,27 @@ int main()
     // domain constants
     // double dz = 0.03e-6;
     double dz = 0.02e-6;
-
-    // double dt = 0.99*dz/C_CONST;
-    // double dt = 0.25*0.99*dz/C_CONST;
-    // double dt = 0.6*0.99*dz/C_CONST;
-
 #ifdef FRACTIONAL_SIM
-    double dt_analytical = 4.5475e-17;
+    double alpha = 0.98;
+    double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
     double dt = 0.999*dt_analytical; //3.0757e-17; // 2.3068e-17
 #else
-    double dt = 0.99999*dz/C_CONST; 
+    double alpha = 1.0;
+    double dt = 0.999*dz/C_CONST; 
 #endif
 
-    double Lz = 150.0e-6;
+    double Lz = 30.0e-6;
     // double Lz = 190.0e-6;
     int Nz = (int) (Lz/dz);
-    double T = 25e-14;
+    double T = 10e-14;
     // double T = 20e-14;
-    // double T = 1.3307e-14;
     int Nt =  (int) (T/dt);
-    
-    double alpha = 0.99;
-    // double alpha = 1.0;
     
     printf("alpha= %f\n", alpha);
     printf("Nz= %d\n", Nz);
     printf("Nt= %d\n", Nt);
     printf("dz= %e\n", dz);
     printf("dt= %e\n", dt);
-    printf("k_source= %d\n", (int) (3.03e-6/dz));
 
     // TEMP - init conditions
     // Nt =  20;
@@ -55,11 +47,14 @@ int main()
     // Ex[0+ 501*Nt] = 1.0;
 
     // Source
-    int k_source = 400;//(int) (3.03e-6/dz);
+    int k_source = (int) (15e-6/dz);//(int) (3.03e-6/dz);
+    printf("k_source= %d\n", k_source);
+
     for (int t = 0; t < Nt-1; t++)
     {
         double delay = 7.957747154594768e-15 - dt/2.0;
-        Ex_source[t] = 1/0.3135*1.0/1.444*dt/2.3281e-17*cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
+        // Ex_source[t] = 1/0.3135*1.0/1.444*dt/2.3281e-17*cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
+        Ex_source[t] = 1.9833*pow(dt, alpha)/6.664611e-017*cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
 
         // Triangle
         // if(t*dt > 0.4e-14 && t*dt < 0.5e-14)
@@ -85,6 +80,10 @@ int main()
     end_time = omp_get_wtime();
     double sim_time = end_time - start_time;
     printf("simulation time: %lf s\n", sim_time);
+
+    sprintf(filename, ".\\results\\results.bin");
+    saveSimParamsToBinary(filename, dz, Lz, Nz,
+                        dt, T, Nt, alpha, sim_time);
 
     // free allocated memory
     free(Ex);

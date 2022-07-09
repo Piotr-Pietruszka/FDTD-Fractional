@@ -15,8 +15,17 @@
 #define ALPHA_ST_NUM 14
 #define DT_ST_NUM 16
 
+
+// #define FRACTIONAL_SIM
 #define MUR_CONDITION
-#define FRACTIONAL_SIM
+#define TIME_ROW_WISE // faster, default option
+
+#ifdef FRACTIONAL_SIM
+    #define OPEN_MP_SPACE
+    // #define OPEN_MP_TIME
+#else
+    #define OPEN_MP_SPACE
+#endif
 
 
 void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
@@ -38,6 +47,11 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
                 double* Ex, double* Hy,
                 double* Ex_source, const int k_source, 
                 int save_result);
+
+void saveSimParamsToBinary(const char *filename,
+                           const double dz, const double Lz, const unsigned int Nz,
+                           const double dt, const double T, const unsigned int Nt,
+                           const double alpha, const double sim_time);
 
 void saveFieldToBinary(const char *filename,
 							const double *data,

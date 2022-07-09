@@ -1,12 +1,4 @@
-% Stability calculations
-dt = 1;
-zeta = 1.9; % zeta > 1
-% mine w_i, alpha =1
-w_i = 1/dt * ( log(2*zeta) / log(exp(-0.5) + exp(0.5)) );
-% taflove w_i, alpha=1
-w_t = -2/dt * log(zeta + sqrt(zeta^2 + 1));
-
-
+%% Stability calculations
 
 MU_0 = 1.2566371e-6;
 EPS_0 = 8.85418781762e-12;
@@ -18,7 +10,7 @@ classic_dt = sqrt(EPS_0*MU_0)*dz
 
 
 
-% Plot xi pseudo-polynomial 
+%% Plot xi pseudo-polynomial 
 % -------------------------------
 figure(1)
 u = [0:0.01:2];
@@ -54,7 +46,7 @@ for i = 1:size(coeff_2a_xi, 2)
 end
 % -------------------------------
 
-% Plotting stability
+%% Plot smallest unstable dt with analytical stability boundary
 figure(2)
 alpha_arr_num = [9.950000e-001, 9.900000e-001, 9.800000e-001, 9.700000e-001, 9.500000e-001, 9.000000e-001, 8.500000e-001, 8.000000e-001, 7.500000e-001, 7.000000e-001, 6.500000e-001, 6.000000e-001, 5.500000e-001, 5.100000e-001];
 unstable_dt = [5.568428e-017, 4.593018e-017, 3.106483e-017, 2.084195e-017, 9.148072e-018, 1.004735e-018, 8.499087e-020, 5.222054e-021, 2.233413e-022, 6.080006e-024, 9.582059e-026, 7.465965e-028, 2.424191e-030, 1.103460e-032]

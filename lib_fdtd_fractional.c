@@ -346,9 +346,9 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
         char filename[128];
         // sprintf(filename, ".\\results\\Ex_%d.bin", sim_counter);
         sprintf(filename, ".\\results\\Ex.bin");
-        saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt);
+        saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt, alpha);
         sprintf(filename, ".\\results\\Hy.bin");
-        saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt);
+        saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt, alpha);
     }
     sim_counter += 1;
 
@@ -426,7 +426,8 @@ void saveFieldToBinary(const char *filename,
                         const unsigned int Nz,
                         const unsigned int Nt,
                         const double dz,
-                        const double dt)
+                        const double dt,
+                        const double alpha)
 {
     FILE *fptr;
 	
@@ -441,6 +442,7 @@ void saveFieldToBinary(const char *filename,
 	fwrite(&Nt, sizeof(unsigned int), 1, fptr);
     fwrite(&dz, sizeof(double), 1, fptr);
 	fwrite(&dt, sizeof(double), 1, fptr);
+    fwrite(&alpha, sizeof(double), 1, fptr);
 
 
 	fwrite(data, sizeof(double), Nz*Nt, fptr);

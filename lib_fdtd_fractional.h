@@ -58,7 +58,8 @@ void saveFieldToBinary(const char *filename,
 							const unsigned int Nz,
 							const unsigned int Nt,
                             const double dz,
-                            const double dt);
+                            const double dt,
+                            const double alpha);
 
 double binomialCoeff(const double alpha, const int k);
 

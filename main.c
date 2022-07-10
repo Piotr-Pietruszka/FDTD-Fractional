@@ -68,7 +68,7 @@ int main()
     }
     char filename[128];
     sprintf(filename, ".\\results\\source.bin");
-    saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt);
+    saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha);
 
     double start_time, end_time;
     start_time = omp_get_wtime();

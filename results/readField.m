@@ -8,6 +8,7 @@ Nz=spatial_temporal_dimensions(1);
 Nt=spatial_temporal_dimensions(2);
 dz = fread(fptr,1,'double');
 dt = fread(fptr,1,'double');    
+alpha = fread(fptr,1,'double');
 field = fread(fptr, [Nt, Nz],'double');
 % field = field';
 

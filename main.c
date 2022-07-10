@@ -4,7 +4,6 @@ int main()
 {
 
     // domain constants
-    // double dz = 0.03e-6;
     double dz = 0.02e-6;
 #ifdef FRACTIONAL_SIM
     double alpha = 0.98;

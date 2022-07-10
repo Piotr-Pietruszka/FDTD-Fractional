@@ -17,7 +17,7 @@
 
 
 // #define FRACTIONAL_SIM
-#define MUR_CONDITION
+// #define MUR_CONDITION
 #define TIME_ROW_WISE // faster, default option
 
 #ifdef FRACTIONAL_SIM

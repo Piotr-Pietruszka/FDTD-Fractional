@@ -309,6 +309,7 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
                 double* Ex_source, const int k_source,
                 int save_result)
 {
+    static sim_counter = 0;
     int k_bound = 600;
     // Precalculate GL coefficients
     double* GL_coeff_arr = calloc(Nt, sizeof(double)); // GL[0]=w1, GL[1]=w2, ... 
@@ -343,11 +344,14 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
     if(save_result)
     {
         char filename[128];
+        // sprintf(filename, ".\\results\\Ex_%d.bin", sim_counter);
         sprintf(filename, ".\\results\\Ex.bin");
         saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt);
         sprintf(filename, ".\\results\\Hy.bin");
         saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt);
     }
+    sim_counter += 1;
+
 }
 
 

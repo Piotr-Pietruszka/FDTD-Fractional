@@ -3,10 +3,13 @@
 int main()
 {
 
+    double alpha_array[14] = {0.9, 0.91, 0.92, 0.93, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99, 0.995, 0.999, 0.9995, 0.9999};
+    for(int i = 0; i < 14; i++)
+    {
     // domain constants
     double dz = 0.02e-6;
 #ifdef FRACTIONAL_SIM
-    double alpha = 0.98;
+    double alpha = alpha_array[i];
     double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
     double dt = 0.999*dt_analytical; //3.0757e-17; // 2.3068e-17
 #else
@@ -88,5 +91,6 @@ int main()
     free(Ex);
     free(Hy);
     free(Ex_source);
+    }
 
 }

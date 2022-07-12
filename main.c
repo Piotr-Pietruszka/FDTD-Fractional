@@ -14,10 +14,10 @@ int main()
     double dt = 0.999*dz/C_CONST; 
 #endif
 
-    double Lz = 30.0e-6;
+    double Lz = 40.0e-6;
     // double Lz = 190.0e-6;
     int Nz = (int) (Lz/dz);
-    double T = 10e-14;
+    double T = 6e-14;
     // double T = 20e-14;
     int Nt =  (int) (T/dt);
     
@@ -46,7 +46,7 @@ int main()
     // Ex[0+ 501*Nt] = 1.0;
 
     // Source
-    int k_source = (int) (15e-6/dz);//(int) (3.03e-6/dz);
+    int k_source = (int) (20e-6/dz);//(int) (3.03e-6/dz);
     printf("k_source= %d\n", k_source);
 
     for (int t = 0; t < Nt-1; t++)

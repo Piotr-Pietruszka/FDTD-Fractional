@@ -20,7 +20,7 @@ ylim([min(field(:)) max(field(:))]);
 
 crop = false;
 crop = true;
-Nz_crop = 350;
+Nz_crop = 450;
 for t = 1:20:Nt
 % for t = 1:10:600
     figure(2);

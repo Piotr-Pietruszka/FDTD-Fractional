@@ -16,7 +16,7 @@
 #define DT_ST_NUM 16
 
 
-// #define FRACTIONAL_SIM
+#define FRACTIONAL_SIM
 // #define MUR_CONDITION
 #define TIME_ROW_WISE // faster, default option
 

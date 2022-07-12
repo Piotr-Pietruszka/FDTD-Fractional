@@ -309,7 +309,7 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
                 double* Ex_source, const int k_source,
                 int save_result)
 {
-    static sim_counter = 0;
+    static int sim_counter = 0;
     int k_bound = 600;
     // Precalculate GL coefficients
     double* GL_coeff_arr = calloc(Nt, sizeof(double)); // GL[0]=w1, GL[1]=w2, ... 

@@ -344,7 +344,11 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
     if(save_result)
     {
         char filename[128];
-        sprintf(filename, ".\\results\\Ex_%d.bin", sim_counter);
+#ifdef MUR_CONDITION
+        sprintf(filename, ".\\results\\Ex_MUR_%d.bin", sim_counter);
+#else
+        sprintf(filename, ".\\results\\Ex_PEC_%d.bin", sim_counter);
+#endif
         // sprintf(filename, ".\\results\\Ex.bin");
         saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt, alpha);
         sprintf(filename, ".\\results\\Hy.bin");

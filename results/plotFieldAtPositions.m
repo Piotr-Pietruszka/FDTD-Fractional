@@ -13,14 +13,14 @@ alpha = fread(fptr,1,'double');
 field = fread(fptr, [Nt, Nz],'double');
 fclose(fptr);
 
+% crop = true;
+crop = false;
+
 for i = 1:length(z_points)
     z = z_points(i);
     field_at_z = field(1:end, z);
     
-    if filename == "Ex.bin" % TEMP
-%         field_at_z = field_at_z*0.6599/0.305;
-%         a = 1
-    end
+
     % X-axis units - depnd on existence of dt
     if exist('dt') > 0
         t_arr = (1:Nt).*dt;
@@ -29,6 +29,14 @@ for i = 1:length(z_points)
         t_arr = (1:Nt);
         xl = 't [steps]';
     end
+    
+    % optionally crop in time
+    if crop
+        t_arr = t_arr(1194:end);
+        field_at_z = field_at_z(1194:end);
+    end
+    
+    % Plot
     plot(t_arr, field_at_z);
     xlabel(xl);
     

@@ -19,9 +19,10 @@ figure(2);
 ylim([min(field(:)) max(field(:))]);
 
 crop = false;
-crop = true;
-Nz_crop = 450;
-for t = 1:20:Nt
+% crop = true;
+% Nz_crop = 450;
+
+for t = 1:100:Nt
 % for t = 1:10:600
     figure(2);
     if exist('dz') > 0

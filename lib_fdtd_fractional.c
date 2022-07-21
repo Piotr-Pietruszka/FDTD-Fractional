@@ -301,13 +301,13 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
  * @param alpha fractional order of derivative
  * @param Ex Ex field array
  * @param Hy Hy field array
- * @return 
+ * @return simulation time in seconds
  */
-void simulation(const double dz, const int Nz, const double dt, const int Nt,
-                const double alpha,
-                double* Ex, double* Hy,
-                double* Ex_source, const int k_source,
-                int save_result)
+double simulation(const double dz, const int Nz, const double dt, const int Nt,
+                  const double alpha,
+                  double* Ex, double* Hy,
+                  double* Ex_source, const int k_source,
+                  int save_result)
 {
     static int sim_counter = 0;
     int k_bound = 600;
@@ -317,19 +317,19 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
     for(int n = 1; n < Nt; n++)
         GL_coeff_arr[n] = fracGLCoeff(GL_coeff_arr[n-1], alpha, n+1);
 
-   
+    double start_time, end_time;
+    start_time = omp_get_wtime();
+
     // main time loop
     for (int t = 0; t < Nt-1; t++)
     {
-        // Ex_inc[t] = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
-        // Hy_inc[t] = sin(t*dt*2*3.14/0.15e-14) * exp( -pow((t*dt-0.75e-14) / (0.2e-14), 2.0) );
 
 #ifdef FRACTIONAL_SIM
         HyUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
 #else
         HyClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
 #endif
-        // Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
+        Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
 
 #ifdef FRACTIONAL_SIM
         ExUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
@@ -337,9 +337,12 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
         ExClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
 #endif        
         Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
-        // Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
-        // Hy[t+1 + (k_source-1)*Nt] = 0.0;
+        Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
+        Hy[t+1 + (k_source-1)*Nt] = 0.0;
     }
+
+    end_time = omp_get_wtime();
+    double sim_time = end_time - start_time;
 
     if(save_result)
     {
@@ -352,6 +355,7 @@ void simulation(const double dz, const int Nz, const double dt, const int Nt,
     }
     sim_counter += 1;
 
+    return sim_time;
 }
 
 
@@ -478,7 +482,7 @@ double binomialCoeff(const double alpha, const int k)
 
 
 /**
- * Find smallest dt for which siumlation is unstable, for different orders (alpha).
+ * Find smallest dt for which simulation is unstable, for different orders (alpha).
  * For every considered order alpha multiple short simulations, with dt values near analytical
  * stability boundary are performed.
  * Simulation is considered unstable if max value of abs(Ex) exceeds certain treshold.

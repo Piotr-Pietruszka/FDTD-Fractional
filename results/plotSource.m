@@ -16,7 +16,7 @@ fclose(fptr);
 % crop source in time
 % Nt=700;
 source_in_time = source_in_time(1:Nt);
-
+max(source_in_time)
 % Alternatively - chosen point at domain
 % ------------
 % fptr=fopen("Ex.bin");
@@ -37,7 +37,7 @@ t=(0:1:Nt-1); % cells
 % size(t)
 
 figure()
-plot(t, source_in_time); 
+plot(t_sec, source_in_time); 
 title('E field amplitude');
 xlabel('t (s)');
 
@@ -49,14 +49,15 @@ fshift = (-Nt/2:Nt/2-1)*(fs/Nt); % domain in Hz
 size(fshift)
 
 % crop frequency - get only right half
-% ix1 = find(fshift>=0, 1)
-% fshift = fshift(ix1:end);
-% y = y(ix1:end);
+ix1 = find(fshift>=0, 1)
+fshift = fshift(ix1:end);
+y = y(ix1:end);
 
-% ix1 = find(fshift>=3e14, 1)
-% ix2 = find(fshift>=9e14, 1)
-% fshift = fshift(ix1:ix2);
-% y = y(ix1:ix2);
+% % specific range
+ix1 = find(fshift>=3e14, 1)
+ix2 = find(fshift>=9e14, 1)
+fshift = fshift(ix1:ix2);
+y = y(ix1:ix2);
 
 figure()
 plot(fshift, abs(y)/max(abs(y))*0.13)

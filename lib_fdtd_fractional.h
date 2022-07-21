@@ -17,7 +17,7 @@
 
 
 #define FRACTIONAL_SIM
-// #define MUR_CONDITION
+#define MUR_CONDITION
 #define TIME_ROW_WISE // faster, default option
 
 #ifdef FRACTIONAL_SIM
@@ -42,11 +42,11 @@ void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
 void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
                      double* Ex, const double* Hy, const int t);
 
-void simulation(const double dz, const int Nz, const double dt, const int Nt,
-                const double alpha,
-                double* Ex, double* Hy,
-                double* Ex_source, const int k_source, 
-                int save_result);
+double simulation(const double dz, const int Nz, const double dt, const int Nt,
+                  const double alpha,
+                  double* Ex, double* Hy,
+                  double* Ex_source, const int k_source, 
+                  int save_result);
 
 void saveSimParamsToBinary(const char *filename,
                            const double dz, const double Lz, const unsigned int Nz,

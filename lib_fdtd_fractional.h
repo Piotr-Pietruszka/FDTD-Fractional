@@ -5,7 +5,6 @@
 #include <string.h>
 #include <time.h>
 
-// #define _OPENMP
 #include <omp.h>
 
 #define MU_0 1.2566371e-6
@@ -13,7 +12,7 @@
 #define C_CONST 299792458.0
 
 #define ALPHA_ST_NUM 14
-#define DT_ST_NUM 16
+#define DT_ST_NUM 14
 
 
 #define FRACTIONAL_SIM
@@ -48,6 +47,11 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   double* Ex_source, const int k_source, 
                   int save_result);
 
+void saveSimParamsToTxt(const char *filename,
+                           const double dz, const double Lz, const unsigned int Nz,
+                           const double dt, const double T, const unsigned int Nt,
+                           const double alpha, const double sim_time);
+
 void saveSimParamsToBinary(const char *filename,
                            const double dz, const double Lz, const unsigned int Nz,
                            const double dt, const double T, const unsigned int Nt,
@@ -68,5 +72,6 @@ double fracGLCoeff(const double w, const double alpha, const int n);
 void checkStability();
 
 double findMaxAbsValue(const int Nz, const int Nt, double* Ex);
+double findMaxAbsValueLastTimeStep(const int Nz, const int Nt, double* Ex);
 
 

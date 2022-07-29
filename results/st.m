@@ -49,15 +49,17 @@ end
 %% Plot smallest unstable dt with analytical stability boundary
 figure(2)
 alpha_arr_num = [9.950000e-001, 9.900000e-001, 9.800000e-001, 9.700000e-001, 9.500000e-001, 9.000000e-001, 8.500000e-001, 8.000000e-001, 7.500000e-001, 7.000000e-001, 6.500000e-001, 6.000000e-001, 5.500000e-001, 5.100000e-001];
-unstable_dt = [5.568428e-017, 4.593018e-017, 3.106483e-017, 2.084195e-017, 9.148072e-018, 1.004735e-018, 8.499087e-020, 5.222054e-021, 2.233413e-022, 6.080006e-024, 9.582059e-026, 7.465965e-028, 2.424191e-030, 1.103460e-032]
-alpha_arr_an = alpha_arr_num(1):(alpha_arr_num(end)-alpha_arr_num(1))/100:alpha_arr_num(end);
+unstable_dt = [5.540861e-017, 4.570280e-017, 3.091105e-017, 2.073877e-017, 9.102785e-018, 9.899597e-019, 8.292799e-020, 5.095305e-021, 2.158250e-022, 5.819434e-024, 8.999972e-026, 6.947495e-028, 2.214829e-030, 9.901580e-033];
+
+alpha_arr_an = alpha_arr_num(1):(alpha_arr_num(end)-alpha_arr_num(1))/200:alpha_arr_num(end);
 dt_arr_an = 2.^(1.0-1./alpha_arr_an) .* (sqrt(EPS_0*MU_0) * dz).^(1./alpha_arr_an);
 
 plot(alpha_arr_an, dt_arr_an)
 hold on
 scatter(alpha_arr_num, unstable_dt)
 set(gca,'yscale','log')
-legend(["analytical boundary", "numerical result"])
+legend(["granica analityczna", "wyniki numeryczne"])
 xlabel("\alpha")
-ylabel("dt[s]")
-title("stability boundary")
+ylabel("\Delta" + "t [s]")
+title(sprintf("Granica stabilnoœci, dz=%e m", dz))
+grid on

@@ -22,7 +22,7 @@ crop = false;
 % crop = true;
 % Nz_crop = 450;
 
-for t = 1:100:Nt
+for t = 1:1:Nt
 % for t = 1:10:600
     figure(2);
     if exist('dz') > 0

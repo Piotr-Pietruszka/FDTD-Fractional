@@ -23,7 +23,9 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
     int k = 0;
     int n = 0;
 #ifdef OPEN_MP_SPACE
+// #pragma omp parallel for
 #pragma omp parallel for private(k)
+// #pragma omp parallel for collapse(2)
 #endif
     for(k = 0; k < Nz-1; k++)
     {
@@ -360,7 +362,59 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
 
 
 /**
- * Save parameters of simulation to binary file. Append to existing data
+ * Save parameters of simulation to text file. Append to existing data
+ * 
+ * @param filename name of binary file
+ * @param dz 
+ * @param Lz 
+ * @param Nz  
+ * @param dt 
+ * @param T 
+ * @param Nt 
+ * @param alpha 
+ * @param sim_time simulation time in seconds
+ * @return 
+ */
+void saveSimParamsToTxt(const char *filename,
+                           const double dz, const double Lz, const unsigned int Nz,
+                           const double dt, const double T, const unsigned int Nt,
+                           const double alpha, const double sim_time)
+{
+    FILE *fptr;
+	if ((fptr = fopen(filename, "a")) == NULL)
+    {
+        printf("cannot open file!\n");
+        exit(1); 
+    }
+    
+    // Get simulation flags
+    unsigned int sim_flag = 0;
+#ifdef FRACTIONAL_SIM
+    sim_flag = sim_flag | 1;
+#endif
+#ifdef MUR_CONDITION
+    sim_flag = sim_flag | 1 << 1;
+#endif
+#ifdef OPEN_MP_SPACE
+    sim_flag = sim_flag | 1 << 2;
+#endif
+#ifdef TIME_ROW_WISE
+    sim_flag = sim_flag | 1 << 3;
+#endif
+
+    // Write params separated by ,. Every new data pack - new line
+    fprintf(fptr, "%d, ", sim_flag);
+    fprintf(fptr, "%e, %d, %e, ", dz, Nz, Lz);
+    fprintf(fptr, "%e, %d, %e, ", dt, Nt, T);
+    fprintf(fptr, "%e, %e\n", alpha, sim_time);
+
+	fclose(fptr);
+}
+
+
+/**
+ * Save parameters of simulation to binary file. Append to existing data.
+ * Outdated - moved to saving to txt
  * 
  * @param filename name of binary file
  * @param dz 
@@ -387,7 +441,7 @@ void saveSimParamsToBinary(const char *filename,
     }
 
     // Write simulation flags
-    int sim_flag = 0;
+    unsigned int sim_flag = 0;
 #ifdef FRACTIONAL_SIM
     sim_flag = sim_flag | 1;
 #endif
@@ -400,21 +454,68 @@ void saveSimParamsToBinary(const char *filename,
 #ifdef TIME_ROW_WISE
     sim_flag = sim_flag | 1 << 3;
 #endif
-    fwrite(&sim_flag, sizeof(unsigned int), 1, fptr);
 
-    fwrite(&dz, sizeof(double), 1, fptr);
-    fwrite(&Lz, sizeof(double), 1, fptr);
-	fwrite(&Nz, sizeof(unsigned int), 1, fptr);
+    size_t written_elements = 0;
+    written_elements += fwrite(&sim_flag, sizeof(unsigned int), 1, fptr);
+    written_elements += fwrite(&dz, sizeof(double), 1, fptr);
+    written_elements += fwrite(&Lz, sizeof(double), 1, fptr);
+    written_elements += fwrite(&Nz, sizeof(unsigned int), 1, fptr);
+    written_elements += fwrite(&dt, sizeof(double), 1, fptr);
+    written_elements += fwrite(&T, sizeof(double), 1, fptr);
+    written_elements += fwrite(&Nt, sizeof(unsigned int), 1, fptr);
+    written_elements += fwrite(&alpha, sizeof(double), 1, fptr);
+    written_elements += fwrite(&sim_time, sizeof(double), 1, fptr);
 
-	fwrite(&dt, sizeof(double), 1, fptr);
-    fwrite(&T, sizeof(double), 1, fptr);
-	fwrite(&Nt, sizeof(unsigned int), 1, fptr);
-
-    fwrite(&alpha, sizeof(double), 1, fptr);
-    fwrite(&sim_time, sizeof(double), 1, fptr);
-
+    printf("written_elements: %d\n",written_elements); // TEMP
 	fclose(fptr);
 }
+
+
+/** Read params from file. Test to validate saved data.
+ * \param filename name of file
+ */
+void FdtdCpuReadPlanefromFile(const char *filename)
+{
+	FILE *fptr;
+	if ((fptr = fopen(filename, "rb")) == NULL)
+	{
+		perror("Error");
+		printf("FdtdCpuReadPlanefromFile, cannot open file");
+        exit(1);
+	}
+    unsigned int sim_flag;
+    double dz;
+    double Lz;
+    unsigned int Nz;
+    double dt;
+    double T;
+    unsigned int Nt;
+    double alpha;
+    double sim_time;
+
+    for(int i = 0; i < 50; i++) // hardcoded number of data to read
+    {
+        printf("i = %d:\n", i);
+        fread(&sim_flag, sizeof(unsigned int), 1, fptr);
+
+        fread(&dz, sizeof(double), 1, fptr);
+        fread(&Lz, sizeof(unsigned int), 1, fptr);
+        fread(&Nz, sizeof(unsigned int), 1, fptr);
+
+        fread(&dt, sizeof(double), 1, fptr);
+        fread(&T, sizeof(double), 1, fptr);
+        fread(&Nt, sizeof(unsigned int), 1, fptr);
+
+        fread(&alpha, sizeof(double), 1, fptr);
+        fread(&sim_time, sizeof(double), 1, fptr);
+
+        printf("sim_flag = %d, dz = %e, Nz = %d, dt = %e, T = %e, Nt = %d, alpha = %e, sim_time = %e\n", 
+                sim_flag, dz, Nz, dt, T, Nt, alpha, sim_time);
+    }
+	fclose(fptr);
+}
+
+
 
 /**
  * Save field to binary file
@@ -442,7 +543,7 @@ void saveFieldToBinary(const char *filename,
     }
 		
 	// Writing dimensions of simulation domain and step sizes to file
-	fwrite(&Nz, sizeof(unsigned int), 1, fptr);
+    fwrite(&Nz, sizeof(unsigned int), 1, fptr);
 	fwrite(&Nt, sizeof(unsigned int), 1, fptr);
     fwrite(&dz, sizeof(double), 1, fptr);
 	fwrite(&dt, sizeof(double), 1, fptr);
@@ -494,7 +595,8 @@ void checkStability()
     double unstable_dt_array[ALPHA_ST_NUM] = {-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0}; // smallest dt, for which simulation is unstable
 
     int Nz = 120;
-    int Nt =  20;
+    int Nt =  200;
+    int Nt_base = 150;
     int k_source = 60;
     double dz = 0.02e-6;
 
@@ -506,11 +608,16 @@ void checkStability()
         double dt_array[DT_ST_NUM]; // dt values to check
         // double dt_resolution = 0.02e-17;
         double dt_resolution = dt_base/100.0;
-        for(int j = 0; j < DT_ST_NUM; j++)
-            dt_array[j] = dt_base - 2*dt_resolution + j*dt_resolution;
+
+        Nt = (int) (Nt_base*(1/alpha * 1/alpha)); // smaller alpha -> smaller exponential growth in unstable case -> 
+                                                  // takes longer to decide weather simulation is unstable
+
+        for(int j = 0; j < DT_ST_NUM; j++)  // [dt-7*dt_r, ..., dt-dt_r]
+            dt_array[j] = dt_base - 7*dt_resolution + j*dt_resolution + dt_resolution/2;
+
+        printf("i=%d, Nt=%d\n", i, Nt);
 
         double unstable_dt = -1.0; // smallest dt, for which simulation is unstable
-
         // iterate over dt values
         for(int j = 0; j < DT_ST_NUM; j++)
         {
@@ -528,8 +635,9 @@ void checkStability()
             // If max_value greater than treshold - there is growth and simulation is unstable
             // Field value can exceed init value for first timesteps, but it decreases later.
             // Thats why greater threshold was chosen
-            double max_value = findMaxAbsValue(Nz, Nt, Ex);
-            if(fabs(max_value) > 10.0)
+            // double max_value = findMaxAbsValue(Nz, Nt, Ex);
+            double max_value = findMaxAbsValueLastTimeStep(Nz, Nt, Ex);
+            if(fabs(max_value) > 1.0)
             {
                 if(unstable_dt < 0.0)
                     unstable_dt = dt;
@@ -567,11 +675,37 @@ double findMaxAbsValue(const int Nz, const int Nt, double* Ex)
 {
     double max_value = 0.0;
     int change_counter = 0;
-    for(int i=0; i < Nt*Nz; i ++)
+    for(int i=0; i < Nt*Nz; i++)
     {
         if(fabs(Ex[i]) > fabs(max_value))
         {
             max_value = Ex[i];
+            change_counter += 1;
+        }
+    }
+
+    return max_value;
+}
+
+
+
+/**
+ * Find maximum absolute value in field array
+ * 
+ * @param Nz space size of array
+ * @param Nt temporal size of array
+ * @param Ex field array
+ * @return maximum value of filed in given array
+ */
+double findMaxAbsValueLastTimeStep(const int Nz, const int Nt, double* Ex)
+{
+    double max_value = 0.0;
+    int change_counter = 0;
+    for(int k=0; k < Nz; k++)
+    {
+        if(fabs(Ex[(Nt-1) + k*Nt]) > fabs(max_value))
+        {
+            max_value = Ex[(Nt-1) + k*Nt];
             change_counter += 1;
         }
     }

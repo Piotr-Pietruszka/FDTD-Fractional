@@ -1,8 +1,10 @@
 #include "lib_fdtd_fractional.h"
 
-#define NO_DIM 1 // number of different dimension size combinations to run simulation with
-
-
+#ifdef STABILITY_CHECK
+    #define NO_DIM 1 // number of different dimension size combinations to run simulation with
+#else
+    #define NO_DIM 15
+#endif
 
 
 /**
@@ -33,42 +35,33 @@ void initParamsCombinations(unsigned int dim_arr[NO_DIM][2])
     // Different Nt, constant Nz
     for(int i = Nz_change; i < NO_DIM; i++)
     {
-        dim_arr[i][0] = 4000;
+        dim_arr[i][0] = 10000;
         dim_arr[i][1] = (i+1-Nz_change) * 1000; // Nt value
     }
 }
 
 
 
-
-
-#define RUN_SIM
 int main()
 {   
-    // {{Nz, Nt}, {Nz, Nt}, ...}
-    
+#ifndef STABILITY_CHECK
     int a = omp_get_num_procs();
     printf("%d\n", a);
 
+    // {{Nz, Nt}, {Nz, Nt}, ...}
     // dim_arr[_][0] - Nz, dim_arr[_][1] - Nt
-    unsigned int dim_arr[NO_DIM][2] = {100, 100};
-    // unsigned int dim_arr[NO_DIM][2] = { {500, 700}, {900, 700} , {1500, 700}, 
-    //                                     {2000, 700}, {2500, 700}, {3000, 700}, {3500, 700}, {4000, 700}, {5000, 700}, {7000, 700},
-    //                                     {9000, 700}, {11000, 700}, {13000, 700},  {15000, 700}, {17000, 700}};
+    // unsigned int dim_arr[NO_DIM][2] = {100, 100};
+    unsigned int dim_arr[NO_DIM][2] = { {500, 700}, {900, 700} , {1500, 700}, 
+                                        {2000, 700}, {2500, 700}, {3000, 700}, {3500, 700}, {4000, 700}, {5000, 700}, {7000, 700},
+                                        {9000, 700}, {11000, 700}, {13000, 700},  {15000, 700}, {17000, 700}};
     // printf("%d, %d, %d, %d\n", dim_arr[0][0], dim_arr[0][1], dim_arr[1][0], dim_arr[2][1]);
     
-    // initParamsCombinations(dim_arr);
+    initParamsCombinations(dim_arr);
 
-#ifndef RUN_SIM
-
-    char filename[128];
-    sprintf(filename, ".\\results\\results.bin");
-    FdtdCpuReadPlanefromFile(filename);
-
+#else
+    unsigned int dim_arr[NO_DIM][2] = {100, 100};
 #endif
 
-
-#ifdef RUN_SIM
 for(int i = 0; i < NO_DIM; i++)
     {
     printf("\ni= %d\n", i);    
@@ -120,15 +113,17 @@ for(int i = 0; i < NO_DIM; i++)
     sprintf(filename, ".\\results\\source.bin");
     saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha);
 
-    // checkStability();
-
+#ifdef STABILITY_CHECK
+    checkStability();
+#else
     // double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, 1);
     double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, 0);
     printf("simulation time: %lf s\n", sim_time);
 
     sprintf(filename, ".\\results\\results.txt");
-    // saveSimParamsToTxt(filename, dz, Lz, Nz,
-    //                     dt, T, Nt, alpha, sim_time);
+    saveSimParamsToTxt(filename, dz, Lz, Nz,
+                        dt, T, Nt, alpha, sim_time);
+#endif
 
     // free allocated memory
     free(Ex);
@@ -136,6 +131,6 @@ for(int i = 0; i < NO_DIM; i++)
     free(Ex_source);
 
     }
-#endif
+
 
 }

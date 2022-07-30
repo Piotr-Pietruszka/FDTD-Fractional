@@ -42,7 +42,7 @@ OPEN_MP_SPACE_id_n = find(OPEN_MP_SPACE_arr == 0);
 TIME_ROW_WISE_id_n = find(TIME_ROW_WISE_arr == 0);
 
 %% Ids to filter by - fixed value of alpha, Nz, Nt
-NZ = 5000;
+NZ = 10000;
 NT = 700;
 
 ALPHA = 0.98; 
@@ -83,34 +83,54 @@ time_ALPHA = sim_time_arr(ALPHA_DEP_id);
 [alpha_plt_unique, time_ALPHA_mean, time_ALPHA_std] = mean_result(alpha_plt, time_ALPHA);
 
 
+plot_Nt_dep = false;
+plot_Nz_dep = false;
+plot_alp_dep = false;
 
 %% Plot mean value
 
-% % Nz dependent
-% scatter(Nz_plt, time_NZ);
-% % hold on
-% scatter(Nz_plt_unique, time_NZ_mean);
-% xlabel("Nz")
-% ylabel("czas symulacji [s]")
-% title("Nt=" + NT + ", \alpha=" + ALPHA);
+plot_Nt_dep = true;
+% plot_Nz_dep = true;
 
+
+% Nz dependent   
+if plot_Nz_dep
+%     scatter(Nz_plt, time_NZ);
+%     hold on
+
+    figure();
+    scatter(Nz_plt_unique, time_NZ_mean);
+    xlabel("Nz")
+    ylabel("czas symulacji [s]")
+    title("Nt=" + NT + ", \alpha=" + ALPHA);
+end
 
 % % Nt dependent 
-% scatter(Nt_plt, time_NT);
-% hold on
-% scatter(Nt_plt_unique, time_NT_mean);
-scatter(Nt_plt_unique, time_NT_mean);
-xlabel("Nt");
-ylabel("czas symulacji [s]");
-title("Nz=" + NZ + ", \alpha=" + ALPHA);
+if plot_Nt_dep
+%     scatter(Nt_plt, time_NT);
+%     hold on
+
+    figure();
+    scatter(Nt_plt_unique, time_NT_mean);
+%       semilogy(Nt_plt_unique, time_NT_mean, "o");
+%     errorbar(Nt_plt_unique, time_NT_mean, time_NT_std, 'o')
+
+    xlabel("Nt");
+    ylabel("czas symulacji [s]");
+    title("Nz=" + NZ + ", \alpha=" + ALPHA);
+end
 
 % % alpha dependent 
-% scatter(alpha_plt, time_ALPHA);
-% hold on
-% scatter(alpha_plt_unique, time_ALPHA_mean);
-% xlabel("\alpha")
-% ylabel("czas symulacji [s]")
-% title("Nz=" + NZ + ", Nt=" + NT);
+if plot_alp_dep
+%     scatter(alpha_plt, time_ALPHA);
+%     hold on
+
+    figure()
+    scatter(alpha_plt_unique, time_ALPHA_mean);
+    xlabel("\alpha")
+    ylabel("czas symulacji [s]")
+    title("Nz=" + NZ + ", Nt=" + NT);
+end
 
 %% intersect3 function
 function [Com,ia,ib,ic] = intersect3(A,B,C)
@@ -141,7 +161,7 @@ function [unique_var, time_var_mean, time_var_std] = mean_result(var_plt, time_v
         u_ids = find(var_plt == u); % ..find indices for this value
         time_var_mean(i) = mean(time_var(u_ids));  % calculate average time, for different sim times for this value of var
         time_var_std(i) = std(time_var(u_ids));
-%         size(time_var(u_ids), 1) % optionall - print on how many average
+        size(time_var(u_ids), 1) % optionall - print on how many average
     end
 end
 

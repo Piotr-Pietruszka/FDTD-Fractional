@@ -5,6 +5,7 @@ results/*.bin
 results/*.png
 results/*.avi
 results/*/
+results/*.txt
 results/fieldAtPosition.m
 results/fig_gauss_propag.m
 results/superluminal_1.m

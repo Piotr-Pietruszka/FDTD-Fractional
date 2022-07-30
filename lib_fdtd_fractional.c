@@ -331,16 +331,22 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
 #else
         HyClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
 #endif
+
+#ifdef ADD_SOURCE
         Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
+#endif
 
 #ifdef FRACTIONAL_SIM
         ExUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
 #else
         ExClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
-#endif        
+#endif
+
+#ifdef ADD_SOURCE
         Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
         Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
         Hy[t+1 + (k_source-1)*Nt] = 0.0;
+#endif
     }
 
     end_time = omp_get_wtime();

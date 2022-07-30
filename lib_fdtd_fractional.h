@@ -19,9 +19,11 @@
 #define MUR_CONDITION
 #define TIME_ROW_WISE // faster, default option
 
+// #define STABILITY_CHECK
+#define ADD_SOURCE
+
 #ifdef FRACTIONAL_SIM
     #define OPEN_MP_SPACE
-    // #define OPEN_MP_TIME
 #else
     #define OPEN_MP_SPACE
 #endif

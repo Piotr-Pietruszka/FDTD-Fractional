@@ -592,7 +592,7 @@ double binomialCoeff(const double alpha, const int k)
  * Find smallest dt for which simulation is unstable, for different orders (alpha).
  * For every considered order alpha multiple short simulations, with dt values near analytical
  * stability boundary are performed.
- * Simulation is considered unstable if max value of abs(Ex) exceeds certain treshold.
+ * Simulation is considered unstable if max value of abs(Ex) at last timestep of simulation exceeds 1 (initial value)
  * 
  */
 void checkStability()

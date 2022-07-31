@@ -35,7 +35,7 @@ void initParamsCombinations(unsigned int dim_arr[NO_DIM][2])
     // Different Nt, constant Nz
     for(int i = Nz_change; i < NO_DIM; i++)
     {
-        dim_arr[i][0] = 10000;
+        dim_arr[i][0] = 7000;
         dim_arr[i][1] = (i+1-Nz_change) * 1000; // Nt value
     }
 }

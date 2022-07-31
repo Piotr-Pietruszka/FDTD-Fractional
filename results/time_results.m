@@ -42,7 +42,7 @@ OPEN_MP_SPACE_id_n = find(OPEN_MP_SPACE_arr == 0);
 TIME_ROW_WISE_id_n = find(TIME_ROW_WISE_arr == 0);
 
 %% Ids to filter by - fixed value of alpha, Nz, Nt
-NZ = 10000;
+NZ = 5000;
 NT = 700;
 
 ALPHA = 0.98; 

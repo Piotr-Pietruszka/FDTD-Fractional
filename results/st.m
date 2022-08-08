@@ -3,7 +3,7 @@
 MU_0 = 1.2566371e-6;
 EPS_0 = 8.85418781762e-12;
 C_CONST = 299792458.0;
-dz = 0.02e-6;
+dz = 0.01e-6;
 alpha = 0.99
 dt = 2^(1-1/alpha) * (sqrt(EPS_0*MU_0) * dz)^(1/alpha)
 classic_dt = sqrt(EPS_0*MU_0)*dz

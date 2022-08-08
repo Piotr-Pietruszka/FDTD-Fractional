@@ -2,6 +2,8 @@
 
 #ifdef STABILITY_CHECK
     #define NO_DIM 1 // number of different dimension size combinations to run simulation with
+#elif defined(ALPHA_CHECK)
+    #define NO_DIM 11 // number of different alpha values to run simulation with
 #else
     #define NO_DIM 15
 #endif
@@ -21,15 +23,15 @@ void initParamsCombinations(unsigned int dim_arr[NO_DIM][2])
 {
 
     
-    int Nz_change = 0;
+    int Nz_change = 0; // 0 - all Nt dependent; NO_DIM - all Nz dependent
     if(Nz_change > NO_DIM)
         Nz_change = NO_DIM;
     
     // Different Nz, constant Nt
-    for(int i = 3; i < Nz_change; i++)
+    for(int i = 0; i < Nz_change; i++)
     {
-        dim_arr[i][0] = i*100;
-        dim_arr[i][1] = 300;
+        dim_arr[i][0] = (i+1)*1000;
+        dim_arr[i][1] = 8000;
     }
     
     // Different Nt, constant Nz
@@ -47,17 +49,18 @@ int main()
 #ifndef STABILITY_CHECK
     int a = omp_get_num_procs();
     printf("%d\n", a);
-
-    // {{Nz, Nt}, {Nz, Nt}, ...}
-    // dim_arr[_][0] - Nz, dim_arr[_][1] - Nt
-    // unsigned int dim_arr[NO_DIM][2] = {100, 100};
-    unsigned int dim_arr[NO_DIM][2] = { {500, 700}, {900, 700} , {1500, 700}, 
-                                        {2000, 700}, {2500, 700}, {3000, 700}, {3500, 700}, {4000, 700}, {5000, 700}, {7000, 700},
-                                        {9000, 700}, {11000, 700}, {13000, 700},  {15000, 700}, {17000, 700}};
-    // printf("%d, %d, %d, %d\n", dim_arr[0][0], dim_arr[0][1], dim_arr[1][0], dim_arr[2][1]);
-    
-    initParamsCombinations(dim_arr);
-
+    #ifdef ALPHA_CHECK
+        double alpha_arr[NO_DIM] = {0.95, 0.955, 0.96, 0.965, 0.97, 0.975, 0.98, 0.985, 0.99, 0.995, 0.999};
+        double T_const = 1e-13;
+    #else
+        // {{Nz, Nt}, {Nz, Nt}, ...}
+        // dim_arr[_][0] - Nz, dim_arr[_][1] - Nt
+        unsigned int dim_arr[NO_DIM][2];
+        // unsigned int dim_arr[NO_DIM][2] = { {500, 700}, {900, 700} , {1500, 700}, 
+        //                                     {2000, 700}, {2500, 700}, {3000, 700}, {3500, 700}, {4000, 700}, {5000, 700}, {7000, 700},
+        //                                     {9000, 700}, {11000, 700}, {13000, 700},  {15000, 700}, {17000, 700}};
+        initParamsCombinations(dim_arr);
+    #endif
 #else
     unsigned int dim_arr[NO_DIM][2] = {100, 100};
 #endif
@@ -68,7 +71,11 @@ for(int i = 0; i < NO_DIM; i++)
     // domain constants
     double dz = 0.01e-6;
 #ifdef FRACTIONAL_SIM
-    double alpha = 0.98;
+    #ifdef ALPHA_CHECK
+        double alpha = alpha_arr[i];
+    #else
+        double alpha = 0.98;
+    #endif
     double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
     double dt = 0.999*dt_analytical; //3.0757e-17; // 2.3068e-17
 #else
@@ -76,12 +83,18 @@ for(int i = 0; i < NO_DIM; i++)
     double dt = 0.999*dz/C_CONST; 
 #endif
 
+#ifdef ALPHA_CHECK
+    unsigned int Nz = 7000;
+    unsigned int Nt = (int) (T_const/dt);
+#else
     unsigned int Nz = dim_arr[i][0];
     unsigned int Nt = dim_arr[i][1];
+#endif
     double Lz = Nz*dz;
-    printf("Lz = %e\n", Lz); // TEMP
+    printf("Lz = %e\n", Lz);
     double T = Nt*dt;
-    
+    printf("T= %e\n", T);
+
     printf("alpha= %f\n", alpha);
     printf("Nz= %d\n", Nz);
     printf("Nt= %d\n", Nt);

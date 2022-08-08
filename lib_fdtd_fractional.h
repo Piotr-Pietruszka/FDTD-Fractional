@@ -22,6 +22,8 @@
 // #define STABILITY_CHECK
 #define ADD_SOURCE
 
+// #define ALPHA_CHECK // check simulation time for varying alpha, const T
+
 #ifdef FRACTIONAL_SIM
     #define OPEN_MP_SPACE
 #else
@@ -74,6 +76,7 @@ double fracGLCoeff(const double w, const double alpha, const int n);
 void checkStability();
 
 double findMaxAbsValue(const int Nz, const int Nt, double* Ex);
+
 double findMaxAbsValueLastTimeStep(const int Nz, const int Nt, double* Ex);
 
 

@@ -1,7 +1,7 @@
 
 %% Read data from file
-filename = "results.txt";
-% filename = "backup\\results_Nt_all.txt";
+% filename = "results.txt";
+filename = "backup\\results_Nt_all.txt";
 % filename = "backup\\results_Nz_all.txt";
 % filename = "backup\\results_alpha_all.txt";
 % filename = "backup\\results_column_Nt_all.txt";
@@ -47,21 +47,21 @@ MUR_CONDITION_id_n = find(MUR_CONDITION_arr == 0);
 OPEN_MP_SPACE_id_n = find(OPEN_MP_SPACE_arr == 0);
 TIME_ROW_WISE_id_n = find(TIME_ROW_WISE_arr == 0);
 
-%% Ids to filter by - flags and fixed values of alpha, Nz, Nt
+%% Ids to filter by - fixed value of alpha, Nz, Nt
 
 % get required flags
-FLAGS_id = intersect3(FRACTIONAL_SIM_id, OPEN_MP_SPACE_id, TIME_ROW_WISE_id); TIME_ROW_WISE = 1; FRACTIONAL_SIM = 1;
-% FLAGS_id = intersect3(FRACTIONAL_SIM_id, OPEN_MP_SPACE_id, TIME_ROW_WISE_id_n); TIME_ROW_WISE = 0; FRACTIONAL_SIM = 1;
+% FLAGS_id = intersect3(FRACTIONAL_SIM_id, OPEN_MP_SPACE_id, TIME_ROW_WISE_id); TIME_ROW_WISE = 1;
+FLAGS_id = intersect3(FRACTIONAL_SIM_id, OPEN_MP_SPACE_id, TIME_ROW_WISE_id_n); TIME_ROW_WISE = 0; FRACTIONAL_SIM = 1;
 
-% FLAGS_id = intersect3(FRACTIONAL_SIM_id_n, OPEN_MP_SPACE_id, TIME_ROW_WISE_id); FRACTIONAL_SIM = 0;
+FLAGS_id = intersect3(FRACTIONAL_SIM_id_n, OPEN_MP_SPACE_id, TIME_ROW_WISE_id); FRACTIONAL_SIM = 0;
 
 NZ = 7000;
 NT = 3000;
 T = 1e-13;
+
 ALPHA = 0.98; 
-if ~FRACTIONAL_SIM
-    ALPHA = 1; 
-end
+if 
+ALPHA = 1; 
 
 eps = 1e-8;
 
@@ -72,6 +72,9 @@ T_id = find(abs(T_arr - T) < eps); % T ids fo T from interval (T - float)
 
 
 %% Merge desired conditions
+
+
+
 
 % get ids for various alpha / Nz / Nt (for constatn Nz and Nt, alpha and Nt, alpha and Nz) 
 ALPHA_DEP_id = intersect3(FLAGS_id, NZ_id, T_id);

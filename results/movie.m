@@ -40,14 +40,15 @@ for t = 1:100:Nt
     end
     plot(z_arr, field_at_t);
     xlabel(xl);
+    ylabel("Ex [V/m]");
     y_l = get(gca, 'YLim');
     ylim([-max(abs(y_l)), max(abs(y_l))]);
     
     % Title with curretn time (sec / steps) depending on existence of dt
     if exist('dt') > 0
-        title(sprintf('E field amplitude at %e s', t*dt));
+        title(sprintf('Pole Ex w %e s', t*dt));
     else
-        title(sprintf('E field amplitude at step %d', t));
+        title(sprintf('Pole Ex w kroku: %d', t));
     end
     
     % Save frame video

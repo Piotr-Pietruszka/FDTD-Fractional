@@ -23,10 +23,10 @@ for i = 1:length(z_points)
 
     % X-axis units - depnd on existence of dt
     if exist('dt') > 0
-        t_arr = (1:Nt).*dt;
+        t_arr = (1:Nt).*dt - dt;
         xl = 't [s]';
     else
-        t_arr = (1:Nt);
+        t_arr = (1:Nt) - 1;
         xl = 't [steps]';
     end
     
@@ -36,17 +36,21 @@ for i = 1:length(z_points)
     end
     plot(t_arr, field_at_z);
     xlabel(xl);
+    ylabel("Ex [V/m]");
     
     % Title depends on existence of dz
     if exist('dz') > 0
-        title(sprintf('E field amplitude at %e m', double(z)*dz));
+        title(sprintf('Pole Ex w punkcie %e m', double(z-1)*dz));
     else
-        title(sprintf('E field amplitude at cell %d', z));
+        title(sprintf('Pole Ex w komórce %d', z));
     end
     
     
     save_filename = sprintf('z_%d.png', z);
     saveas(gcf, save_filename);
+    
+    size(field_at_z)
+    min(field_at_z)
 end
 
 

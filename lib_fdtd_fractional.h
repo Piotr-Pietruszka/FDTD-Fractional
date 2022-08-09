@@ -74,6 +74,5 @@ double fracGLCoeff(const double w, const double alpha, const int n);
 void checkStability();
 
 double findMaxAbsValue(const int Nz, const int Nt, double* Ex);
+
 double findMaxAbsValueLastTimeStep(const int Nz, const int Nt, double* Ex);
-
-

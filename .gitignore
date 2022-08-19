@@ -14,3 +14,4 @@ results/superluminal_v_test.m
 results/name.py
 results/fig_gauss_propag*.m
 results/*.asv
+results/*.eps

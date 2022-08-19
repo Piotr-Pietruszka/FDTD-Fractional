@@ -1,4 +1,4 @@
-
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +14,7 @@
 #define ALPHA_ST_NUM 14
 #define DT_ST_NUM 14
 
-
+#define OPEN_MP_SPACE
 #define FRACTIONAL_SIM
 #define MUR_CONDITION
 #define TIME_ROW_WISE // faster, default option
@@ -22,11 +22,7 @@
 // #define STABILITY_CHECK
 #define ADD_SOURCE
 
-#ifdef FRACTIONAL_SIM
-    #define OPEN_MP_SPACE
-#else
-    #define OPEN_MP_SPACE
-#endif
+#define CHUNK_SIZE_BYTES 2147483648 // 2 GB (2147483648 bytes)
 
 
 void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
@@ -50,11 +46,6 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   int save_result);
 
 void saveSimParamsToTxt(const char *filename,
-                           const double dz, const double Lz, const unsigned int Nz,
-                           const double dt, const double T, const unsigned int Nt,
-                           const double alpha, const double sim_time);
-
-void saveSimParamsToBinary(const char *filename,
                            const double dz, const double Lz, const unsigned int Nz,
                            const double dt, const double T, const unsigned int Nt,
                            const double alpha, const double sim_time);

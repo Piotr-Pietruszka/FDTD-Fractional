@@ -23,8 +23,7 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
     int k = 0;
     int n = 0;
 #ifdef OPEN_MP_SPACE
-
-#pragma omp parallel for
+    #pragma omp parallel for
 #endif
     for(k = 0; k < Nz-1; k++)
     {
@@ -321,15 +320,17 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
 
     end_time = omp_get_wtime();
     double sim_time = end_time - start_time;
-
+    printf("Simulation finished. Saving results to files\n");
     if(save_result)
     {
         char filename[128];
         // sprintf(filename, ".\\results\\Ex_%d.bin", sim_counter);
         sprintf(filename, ".\\results\\Ex.bin");
         saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt, alpha);
+        printf("Ex field saved\n");
         sprintf(filename, ".\\results\\Hy.bin");
         saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt, alpha);
+        printf("Hy field saved\n");
     }
     sim_counter += 1;
 
@@ -389,111 +390,6 @@ void saveSimParamsToTxt(const char *filename,
 
 
 /**
- * Save parameters of simulation to binary file. Append to existing data.
- * Outdated - moved to saving to txt
- * 
- * @param filename name of binary file
- * @param dz 
- * @param Lz 
- * @param Nz  
- * @param dt 
- * @param T 
- * @param Nt 
- * @param alpha 
- * @param sim_time simulation time in seconds
- * @return 
- */
-void saveSimParamsToBinary(const char *filename,
-                           const double dz, const double Lz, const unsigned int Nz,
-                           const double dt, const double T, const unsigned int Nt,
-                           const double alpha, const double sim_time)
-{
-    FILE *fptr;
-	
-	if ((fptr = fopen(filename, "a")) == NULL)
-    {
-        printf("cannot open file!\n");
-        exit(1); 
-    }
-
-    // Write simulation flags
-    unsigned int sim_flag = 0;
-#ifdef FRACTIONAL_SIM
-    sim_flag = sim_flag | 1;
-#endif
-#ifdef MUR_CONDITION
-    sim_flag = sim_flag | 1 << 1;
-#endif
-#ifdef OPEN_MP_SPACE
-    sim_flag = sim_flag | 1 << 2;
-#endif
-#ifdef TIME_ROW_WISE
-    sim_flag = sim_flag | 1 << 3;
-#endif
-
-    size_t written_elements = 0;
-    written_elements += fwrite(&sim_flag, sizeof(unsigned int), 1, fptr);
-    written_elements += fwrite(&dz, sizeof(double), 1, fptr);
-    written_elements += fwrite(&Lz, sizeof(double), 1, fptr);
-    written_elements += fwrite(&Nz, sizeof(unsigned int), 1, fptr);
-    written_elements += fwrite(&dt, sizeof(double), 1, fptr);
-    written_elements += fwrite(&T, sizeof(double), 1, fptr);
-    written_elements += fwrite(&Nt, sizeof(unsigned int), 1, fptr);
-    written_elements += fwrite(&alpha, sizeof(double), 1, fptr);
-    written_elements += fwrite(&sim_time, sizeof(double), 1, fptr);
-
-    printf("written_elements: %d\n",written_elements); // TEMP
-	fclose(fptr);
-}
-
-
-/** Read params from file. Test to validate saved data.
- * \param filename name of file
- */
-void FdtdCpuReadPlanefromFile(const char *filename)
-{
-	FILE *fptr;
-	if ((fptr = fopen(filename, "rb")) == NULL)
-	{
-		perror("Error");
-		printf("FdtdCpuReadPlanefromFile, cannot open file");
-        exit(1);
-	}
-    unsigned int sim_flag;
-    double dz;
-    double Lz;
-    unsigned int Nz;
-    double dt;
-    double T;
-    unsigned int Nt;
-    double alpha;
-    double sim_time;
-
-    for(int i = 0; i < 50; i++) // hardcoded number of data to read
-    {
-        printf("i = %d:\n", i);
-        fread(&sim_flag, sizeof(unsigned int), 1, fptr);
-
-        fread(&dz, sizeof(double), 1, fptr);
-        fread(&Lz, sizeof(unsigned int), 1, fptr);
-        fread(&Nz, sizeof(unsigned int), 1, fptr);
-
-        fread(&dt, sizeof(double), 1, fptr);
-        fread(&T, sizeof(double), 1, fptr);
-        fread(&Nt, sizeof(unsigned int), 1, fptr);
-
-        fread(&alpha, sizeof(double), 1, fptr);
-        fread(&sim_time, sizeof(double), 1, fptr);
-
-        printf("sim_flag = %d, dz = %e, Nz = %d, dt = %e, T = %e, Nt = %d, alpha = %e, sim_time = %e\n", 
-                sim_flag, dz, Nz, dt, T, Nt, alpha, sim_time);
-    }
-	fclose(fptr);
-}
-
-
-
-/**
  * Save field to binary file
  * 
  * @param filename name of binary file
@@ -525,8 +421,34 @@ void saveFieldToBinary(const char *filename,
 	fwrite(&dt, sizeof(double), 1, fptr);
     fwrite(&alpha, sizeof(double), 1, fptr);
 
-
-	fwrite(data, sizeof(double), Nz*Nt, fptr);
+    // Writing data in chunks - for data larger than 4 GB at once fwrite can hang
+    unsigned int offset = 0;
+    unsigned int chunk_size = CHUNK_SIZE_BYTES / sizeof(double); // chunk size - 2 GB equivalent
+    if(Nz*Nt > chunk_size)
+    {
+        // printf("Writing in chunks. Single chunk size: %d\n", chunk_size);
+        unsigned int last_data = 0;
+        for (unsigned int i = 0; i < Nz*Nt-chunk_size; i += chunk_size)
+        {
+            int ret = fwrite(data+i, sizeof(double), chunk_size, fptr);
+            if (ret != chunk_size) {
+                printf("Stream error indication %d\n", ferror(fptr));
+            }
+            last_data = i+chunk_size;
+        }
+        int ret = fwrite(data+last_data, sizeof(double), Nz*Nt-last_data, fptr);
+        if (ret != Nz*Nt-last_data) {
+            printf("Stream error indication %d\n", ferror(fptr));
+        }
+        
+    }
+    else
+    {
+        int ret = fwrite(data, sizeof(double), Nz*Nt, fptr);
+        if (ret != Nz*Nt) {
+            printf("Stream error indication %d\n", ferror(fptr));
+        }
+    }
 	fclose(fptr);
 }
 

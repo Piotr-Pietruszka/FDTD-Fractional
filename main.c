@@ -1,36 +1,110 @@
 #include "lib_fdtd_fractional.h"
 
-enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE};
+enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE, GAUSSIAN};
 
 int main()
 {   
 
-
+    // parameters to choose: alpha, T, Lz, source type
     // domain constants
-    double dz = 0.01e-6;
+    // double dz = 0.005e-6;
+    // double dz = 0.01e-6;
+    double dz = 0.005e-6;
+
 #ifdef FRACTIONAL_SIM
-    double alpha = 0.98;
+    double alpha = 0.99;
     double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
-    double dt = 0.9999*dt_analytical; //3.0757e-17; // 2.3068e-17
+    double dt = 0.999*dt_analytical; //3.0757e-17; // 2.3068e-17
 #else
     double alpha = 1.0;
     double dt = 0.999*dz/C_CONST; 
 #endif
+    enum SourceType source_type = MODULATED_GAUSSIAN;
+    // enum SourceType source_type = TRIANGLE;
 
-    double Lz = 50.0e-6;
+
+    double Lz = 140.0e-6;
+    // double Lz = 50.0e-6;
+    // double Lz = 460.0e-6;
     // double Lz = 190.0e-6;
-    unsigned int Nz = (int) (Lz/dz);
-    double T = 5e-14;
+    double T = 32e-14;
     // double T = 20e-14;
-    unsigned int Nt =  (int) (T/dt);
+    char source_char = 'm';
+/*
+    printf("Simulation of electromagnetic wave propagation in fractional-order material\n");
+    int correct_input = 0;
+    while(!correct_input)
+    {
+        // Get alpha from user
+        printf("\nOrder - alpha [0.9 - 1.0]: ");
+        if (!scanf("%lf", &alpha))
+        {
+            scanf("%*[^\n]"); //discard that line up to the newline
+            printf("Wrong value of order!\n");
+            continue;
+        }
+        else if(alpha < 0.9 || alpha > 1.0)
+        {
+            printf("Wrong value of order - use values only from [0.9, 1] interval\n");
+            continue;
+        }
+
+        // Get Lz from user
+        printf("Size of computational domain - Lz [1e-6 - 200e-6]: ");
+        if (!scanf("%lf", &Lz))
+        {
+            scanf("%*[^\n]"); //discard that line up to the newline
+            printf("Wrong value of Lz\n");
+            continue;
+        }
+        else if(Lz < 1e-6 || Lz > 200e-6)
+        {
+            printf("Wrong value of Lz - use values only from [1e-6, 200e-6] interval\n");
+            continue;
+        }
+        
+        // Get T from user
+        printf("Simulation time - T [1e-14 - 40e-14]: ");
+        if (!scanf("%lf", &T))
+        {
+            scanf("%*[^\n]"); //discard that line up to the newline
+            printf("Wrong value of T!\n");
+            continue;
+        }
+        else if(T < 1e-14 || T > 40e-14)
+        {
+            printf("Wrong value of T - use values only from [1e-14 - 40e-14] interval\n");
+            continue;
+        }  
+        scanf("%*[^\n]"); //discard that line up to the newline
+        // Get source type
+        printf("Source type: m (modulated gaussian) / r (rectangle) / t (triangle) / g (gaussian): ");
+        if (!scanf(" %c", &source_char))
+        {
+            scanf("%*[^\n]"); //discard that line up to the newline
+            printf("Wrong value of source type!\n");
+            continue;
+        }
+        else if(!(source_char=='m' || source_char=='r' || source_char=='t' || source_char=='g'))
+        {
+            printf("Wrong value of source_type - use values only m, r, t or\n");
+            continue;
+        }  
+
+        correct_input = 1;
+    }
+    */
     
+    unsigned int Nz = (int) (Lz/dz);
+    unsigned int Nt =  (int) (T/dt);
+
     printf("alpha= %f\n", alpha);
-    printf("Nz= %d\n", Nz);
-    printf("Nt= %d\n", Nt);
-    printf("dz= %e\n", dz);
-    printf("dt= %e\n", dt);
     printf("Lz = %e\n", Lz);
     printf("T = %e\n", T); 
+    printf("dz= %e\n", dz);
+    printf("dt= %e\n", dt);
+    printf("Nz= %d\n", Nz);
+    printf("Nt= %d\n", Nt);
 
     // field arrays - for whole domain and simulation time
     double* Ex = calloc(Nz*Nt, sizeof(double));
@@ -44,7 +118,6 @@ int main()
         exit(1); 
     } 
 
-    enum SourceType source_type = MODULATED_GAUSSIAN;
     // Source
     int k_source = (int) (0.1e-6/dz);
     printf("k_source= %d\n", k_source);
@@ -56,10 +129,24 @@ int main()
    
     for (int t = 0; t < Nt-1; t++)
     {
-        double delay = 7.957747154594768e-15 - dt/2.0;
+        
         if (source_type == MODULATED_GAUSSIAN)
         {
-            Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
+            // double delay = 7.957747154594768e-15 - dt/2.0;
+            // Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
+            
+            double max_fr = 750e12;
+            double min_fr = 430e12;
+            double central_fr = (max_fr+min_fr) / 2.0;
+            double w_central = 2* M_PI * central_fr;
+
+            double tau = 2.0 / M_PI / (max_fr-min_fr);
+            double delay = 4*tau+dt/2;
+
+            Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*w_central) * exp( -pow((t*dt-delay) / tau, 2.0) ); // modulated gaussian
+
+            // // double delay = 7.957747154594768e-15 - dt/2.0;
+            // Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
         }
         else if (source_type == TRIANGLE)
         {
@@ -74,7 +161,9 @@ int main()
         }
         else if(source_type == RECTANGLE)
         {
-            if(t*dt > 0.3e-14 && t*dt < 0.7e-14)
+            double start = 3.387e-15;
+            double end = 6.8e-15;
+            if(t*dt > start && t*dt < end)
             {
                 if(first_t_source < 0)
                     first_t_source = t;
@@ -82,11 +171,20 @@ int main()
                 last_t_source = t;
             }
         }
+        else if(source_type == GAUSSIAN)
+        {
+            double delay = 7.957747154594768e-15 - dt/2.0;
+            Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
+        
+        }
     }
     if(source_type == RECTANGLE)
     {
-        Ex_source[first_t_source-1] = 1.75; Ex_source[first_t_source-2] = 1.5; Ex_source[first_t_source-3] = 1.25; Ex_source[first_t_source-4] = 1; Ex_source[first_t_source-5] = 0.75; Ex_source[first_t_source-6] = 0.5; Ex_source[first_t_source-7] = 0.25;
-        Ex_source[last_t_source+1] = 1.5; Ex_source[last_t_source+2] = 1; Ex_source[last_t_source+3] = 0.5;
+        Ex_source[first_t_source-1] = 1.5; Ex_source[first_t_source-2] = 1.0; Ex_source[first_t_source-3] = 0.5; 
+        Ex_source[last_t_source+1] = 1.5; Ex_source[last_t_source+2] = 1.0; Ex_source[last_t_source+3] = 0.5;     
+    
+        // Ex_source[first_t_source-1] = 1.75; Ex_source[first_t_source-2] = 1.5; Ex_source[first_t_source-3] = 1.25; Ex_source[first_t_source-4] = 1; Ex_source[first_t_source-5] = 0.75; Ex_source[first_t_source-6] = 0.5; Ex_source[first_t_source-7] = 0.25;
+        // Ex_source[last_t_source+1] = 1.75; Ex_source[last_t_source+2] = 1.5; Ex_source[last_t_source+3] = 1.25; Ex_source[last_t_source+4] = 1; Ex_source[last_t_source+5] = 0.75; Ex_source[last_t_source+6] = 0.5; Ex_source[last_t_source+7] = 0.25;    
     }
 
     char filename[128];
@@ -99,9 +197,9 @@ int main()
     double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, 1);
     printf("simulation time: %lf s\n", sim_time);
 
-    // sprintf(filename, ".\\results\\results.txt");
-    // saveSimParamsToTxt(filename, dz, Lz, Nz,
-    //                     dt, T, Nt, alpha, sim_time);
+    sprintf(filename, ".\\results\\results.txt");
+    saveSimParamsToTxt(filename, dz, Lz, Nz,
+                        dt, T, Nt, alpha, sim_time);
 #endif
 
     // free allocated memory

@@ -7,12 +7,12 @@ int main()
 
     // parameters to choose: alpha, T, Lz, source type
     // domain constants
-    // double dz = 0.005e-6;
+    // double dz = 0.02e-6;
     // double dz = 0.01e-6;
     double dz = 0.005e-6;
 
 #ifdef FRACTIONAL_SIM
-    double alpha = 0.99;
+    double alpha = 0.98;
     double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
     double dt = 0.999*dt_analytical; //3.0757e-17; // 2.3068e-17
 #else
@@ -23,11 +23,11 @@ int main()
     // enum SourceType source_type = TRIANGLE;
 
 
-    double Lz = 140.0e-6;
+    double Lz = 100.0e-6;
     // double Lz = 50.0e-6;
     // double Lz = 460.0e-6;
     // double Lz = 190.0e-6;
-    double T = 32e-14;
+    double T = 18e-14;
     // double T = 20e-14;
     char source_char = 'm';
 /*

@@ -48,15 +48,15 @@ for t = 1:200:Nt
     frame = getframe(gcf);
     writeVideo(writerObj, frame);
     
-    % save frame to file
+%     % Save frame to file
 %     save_filename = sprintf('t_%d.png', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
 %     saveas(gcf, save_filename);
     
-    % ave with color
-    save_filename = sprintf('t_%d', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
-    saveas(gcf,save_filename, 'epsc');
+%     % Save with color
+%     save_filename = sprintf('t_%d', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
+%     saveas(gcf,save_filename, 'epsc');
        
-    % save in blank an white  
+%     % Save in blank an white  
 %     save_filename = sprintf('t_%d.eps', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
 %     saveas(gcf, save_filename);
 end

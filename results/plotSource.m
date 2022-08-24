@@ -16,18 +16,17 @@ fclose(fptr);
 
 % Alternatively - chosen point at domain
 % ------------
-fptr=fopen("Ex.bin");
-spatial_temporal_dimensions =fread(fptr,2,'uint');
-Nz=spatial_temporal_dimensions(1);
-Nt=spatial_temporal_dimensions(2);
-dz = fread(fptr,1,'double');
-dt = fread(fptr,1,'double');
-alpha = fread(fptr,1,'double');
-field = fread(fptr, [Nt, Nz],'double');
-
-source_in_time = field(1:end, int32(0.1e-6/dz)+1);
-% source_in_time = field(1:end, int32(0.1e-6/dz)+int32(0e-6/dz)++1);
-fclose(fptr);
+% fptr=fopen("Ex.bin");
+% spatial_temporal_dimensions =fread(fptr,2,'uint');
+% Nz=spatial_temporal_dimensions(1);
+% Nt=spatial_temporal_dimensions(2);
+% dz = fread(fptr,1,'double');
+% dt = fread(fptr,1,'double');
+% alpha = fread(fptr,1,'double');
+% field = fread(fptr, [Nt, Nz],'double');
+% source_in_time = field(1:end, int32(0.1e-6/dz)+1);
+% % source_in_time = field(1:end, int32(0.1e-6/dz)+int32(0e-6/dz)++1);
+% fclose(fptr);
 % ------------
 
 % crop source in time
@@ -47,7 +46,7 @@ plot(t_sec, source_in_time);
 title('Pole Ÿród³owe');
 xlabel('t (s)');
 ylabel("Ex [V/m]");
-xlim([0, 2.5e-14]);
+% xlim([0, 2.5e-14]); % "crop" - zxlim
 
 % Spectrum of the source
 y = fft(source_in_time, Nt);

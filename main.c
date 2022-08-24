@@ -1,6 +1,6 @@
 #include "lib_fdtd_fractional.h"
 
-enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE, GAUSSIAN};
+enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE, GAUSSIAN, SINUS};
 
 int main()
 {   
@@ -8,26 +8,24 @@ int main()
     // parameters to choose: alpha, T, Lz, source type
     // domain constants
     // double dz = 0.005e-6;
-    // double dz = 0.01e-6;
-    double dz = 0.005e-6;
+    double dz = 0.01e-6;
+    // double dz = 0.005e-6;
 
 #ifdef FRACTIONAL_SIM
     double alpha = 0.99;
     double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
-    double dt = 0.999*dt_analytical; //3.0757e-17; // 2.3068e-17
+    double dt = 0.999*dt_analytical; 
 #else
     double alpha = 1.0;
     double dt = 0.999*dz/C_CONST; 
 #endif
-    enum SourceType source_type = MODULATED_GAUSSIAN;
+    enum SourceType source_type = SINUS;
     // enum SourceType source_type = TRIANGLE;
 
 
-    double Lz = 140.0e-6;
-    // double Lz = 50.0e-6;
-    // double Lz = 460.0e-6;
-    // double Lz = 190.0e-6;
-    double T = 32e-14;
+    // double Lz = 140.0e-6;
+    double Lz = 80.0e-6;
+    double T = 18e-14;
     // double T = 20e-14;
     char source_char = 'm';
 /*
@@ -126,7 +124,8 @@ int main()
     // First and last timesteps of source signal
     int first_t_source = -1;
     int last_t_source = -1;
-   
+    int stop_sin = -1;
+
     for (int t = 0; t < Nt-1; t++)
     {
         
@@ -176,6 +175,16 @@ int main()
             double delay = 7.957747154594768e-15 - dt/2.0;
             Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
         
+        }
+        else if(source_type == SINUS)
+        {
+            double w_sin = 2* M_PI * 3e14;
+            if(t*dt > 8e-14 && sin((t*dt)*w_sin) < 1e-4)
+                stop_sin = 1;
+            if(stop_sin < 0)
+            {
+                Ex_source[t] = sin((t*dt)*w_sin); // modulated gaussian       
+            }        
         }
     }
     if(source_type == RECTANGLE)

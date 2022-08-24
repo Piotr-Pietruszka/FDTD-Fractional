@@ -20,7 +20,6 @@ for i = 1:length(z_points)
     field_at_z = field(1:end, z);  % field at specific time
     
     t_arr = (1:Nt).*dt - dt; % -dt to start x-axis from 0
-    xl = 't [s]';
 
     if crop
         field_at_z = field_at_z(150:end);
@@ -28,12 +27,11 @@ for i = 1:length(z_points)
     end
     
     % plot
-%     plot(t_arr, field_at_z);
-%     xlabel(xl);
-%     ylabel("Ex [V/m]");
-%     xlim([t_arr(1), t_arr(end)]);
-%     % Title depends on existence of dz
-%     title(sprintf('Pole Ex w punkcie %e m', double(z-1)*dz)); % -1 to start from 0 (el 1 in Matalb - it is boundary -> 0)
+    plot(t_arr, field_at_z);
+    xlabel('t [s]');
+    ylabel("Ex [V/m]");
+    xlim([t_arr(1), t_arr(end)]);
+    title(sprintf('Pole Ex w punkcie %e m', double(z-1)*dz)); % -1 to start from 0 (el 1 in Matalb - it is boundary -> 0)
     
 %     save_filename = sprintf('z_%d.png', z-1); % -1 to start from 0 (el 1 in Matalb - it is boundary -> 0)
 %     saveas(gcf, save_filename);

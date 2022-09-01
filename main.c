@@ -197,9 +197,6 @@ int main()
     sprintf(filename, ".\\results\\source.bin");
     saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha, Nz+10);
 
-#ifdef STABILITY_CHECK
-    checkStability();
-#else
     int k_bound = (int) (0.1e-6/dz) + (int) (20e-6/dz); // material boundary
     double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, k_bound, 1);
     printf("simulation time: %lf s\n", sim_time);
@@ -207,7 +204,6 @@ int main()
     sprintf(filename, ".\\results\\results.txt");
     saveSimParamsToTxt(filename, dz, Lz, Nz,
                         dt, T, Nt, alpha, sim_time);
-#endif
 
     // free allocated memory
     free(Ex);

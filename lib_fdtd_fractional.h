@@ -42,7 +42,7 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
 double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   const double alpha,
                   double* Ex, double* Hy,
-                  double* Ex_source, const int k_source, 
+                  double* Ex_source, const int k_source, const int k_bound,
                   int save_result);
 
 void saveSimParamsToTxt(const char *filename,
@@ -56,7 +56,8 @@ void saveFieldToBinary(const char *filename,
 							const unsigned int Nt,
                             const double dz,
                             const double dt,
-                            const double alpha);
+                            const double alpha,
+                            const int k_bound);
 
 double binomialCoeff(const double alpha, const int k);
 

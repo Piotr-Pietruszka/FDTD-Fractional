@@ -19,12 +19,12 @@ int main()
     double alpha = 1.0;
     double dt = 0.999*dz/C_CONST; 
 #endif
-    enum SourceType source_type = SINUS;
+    enum SourceType source_type = MODULATED_GAUSSIAN;
     // enum SourceType source_type = TRIANGLE;
 
 
     // double Lz = 140.0e-6;
-    double Lz = 80.0e-6;
+    double Lz = 70.0e-6;
     double T = 18e-14;
     // double T = 20e-14;
     char source_char = 'm';
@@ -143,9 +143,6 @@ int main()
             double delay = 4*tau+dt/2;
 
             Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*w_central) * exp( -pow((t*dt-delay) / tau, 2.0) ); // modulated gaussian
-
-            // // double delay = 7.957747154594768e-15 - dt/2.0;
-            // Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
         }
         else if (source_type == TRIANGLE)
         {
@@ -198,12 +195,13 @@ int main()
 
     char filename[128];
     sprintf(filename, ".\\results\\source.bin");
-    saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha);
+    saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha, Nz+10);
 
 #ifdef STABILITY_CHECK
     checkStability();
 #else
-    double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, 1);
+    int k_bound = (int) (0.1e-6/dz) + (int) (20e-6/dz); // material boundary
+    double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, k_bound, 1);
     printf("simulation time: %lf s\n", sim_time);
 
     sprintf(filename, ".\\results\\results.txt");

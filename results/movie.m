@@ -8,6 +8,7 @@ Nt=spatial_temporal_dimensions(2);
 dz = fread(fptr,1,'double');
 dt = fread(fptr,1,'double');
 alpha = fread(fptr,1,'double');
+k_bound = fread(fptr,1,'int');
 field = fread(fptr, [Nt, Nz],'double');
 fclose(fptr);
 
@@ -22,7 +23,7 @@ crop = false;
 % crop = true;
 % Nz_crop = 450;
 
-for t = 1:200:Nt
+for t = 1:100:Nt
 % for t = 1:10:600
     figure(2);
     z_arr = (1:Nz).*dz - dz; % -dz to start x-axis from 0
@@ -44,6 +45,10 @@ for t = 1:200:Nt
     if t == 1 % scale image if needed
 %         sc_h
     end
+    
+    hold on
+    line([k_bound+1 k_bound+1], ylim, "LineStyle", "--", "Color", [0.2 0.5470 0.8410]);
+    hold off
     % Save frame video
     frame = getframe(gcf);
     writeVideo(writerObj, frame);

@@ -10,6 +10,7 @@ Nt = spatial_temporal_dimensions(2);
 dz = fread(fptr,1,'double');
 dt = fread(fptr,1,'double');
 alpha = fread(fptr,1,'double');
+k_bound = fread(fptr,1,'int');
 source_in_time = fread(fptr, [Nz, Nt],'double');
 fclose(fptr);
 
@@ -23,6 +24,7 @@ fclose(fptr);
 % dz = fread(fptr,1,'double');
 % dt = fread(fptr,1,'double');
 % alpha = fread(fptr,1,'double');
+% k_bound = fread(fptr,1,'int');
 % field = fread(fptr, [Nt, Nz],'double');
 % source_in_time = field(1:end, int32(0.1e-6/dz)+1);
 % % source_in_time = field(1:end, int32(0.1e-6/dz)+int32(0e-6/dz)++1);
@@ -43,7 +45,7 @@ t=(0:1:Nt-1); % cells
 
 figure(1)
 plot(t_sec, source_in_time); 
-title('Pole Ÿród³owe');
+title('Pole ï¿½rï¿½dï¿½owe');
 xlabel('t (s)');
 ylabel("Ex [V/m]");
 % xlim([0, 2.5e-14]); % "crop" - zxlim
@@ -68,7 +70,7 @@ size(fshift)
 
 figure(2)
 plot(fshift, abs(y)/max(abs(y))*0.13)
-title('Spektrum Ÿród³a');
+title('Spektrum ï¿½rï¿½dï¿½a');
 xlabel('f (Hz)');
 
 

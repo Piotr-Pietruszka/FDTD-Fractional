@@ -27,13 +27,20 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
 #endif
     for(k = 0; k < Nz-1; k++)
     {
-        // update based on Hy rotation
-        Hy[t+1 + k*Nt] =  -pow(dt, alpha)/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
-
-        // update based on previous Hy values (from GL derivative)
-        for(n = 0; n < t; n++)
+        if (k > k_bound)
         {
-            Hy[t+1 + k*Nt] -= Hy[t-n + k*Nt] * GL_coeff_arr[n];
+            // update based on Hy rotation
+            Hy[t+1 + k*Nt] =  -pow(dt, alpha)/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
+
+            // update based on previous Hy values (from GL derivative)
+            for(n = 0; n < t; n++)
+            {
+                Hy[t+1 + k*Nt] -= Hy[t-n + k*Nt] * GL_coeff_arr[n];
+            }
+        }
+        else
+        {
+            Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
         }
     }
 #else
@@ -80,29 +87,41 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
     int k = 1;
     int n = 0;
 #ifdef MUR_CONDITION    
-    #ifdef OPEN_MP_SPACE
-        #pragma omp parallel for
-    #endif
+#ifdef OPEN_MP_SPACE
+    #pragma omp parallel for
+#endif
     for(k = 1; k < Nz-1; k++)
     {
-        // update based on Hy rotation
-        Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
-        
-        // update based on previous Ex values (from GL derivative)
-        for(n = 0; n < t; n++)
+        if (k > k_bound)
         {
-            Ex[t+1 + k*Nt] -= Ex[t-n + k*Nt] * GL_coeff_arr[n];
+            // update based on Hy rotation
+            Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
+            
+            // update based on previous Ex values (from GL derivative)
+            for(n = 0; n < t; n++)
+            {
+                Ex[t+1 + k*Nt] -= Ex[t-n + k*Nt] * GL_coeff_arr[n];
+            }
+        }
+        else
+        {
+            Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; 
         }
     }
-    // Mur condition - left boundary
-    Ex[t+1 + 0*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[t+1 + 1*Nt] +
-                     (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[t + 1*Nt] - Ex[t + 0*Nt]);
-    for(n = 0; n < t; n++)
-    {
-        Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 1*Nt];
-        Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 0*Nt];
-    }
-    // Mur condition - right boundary   
+    // Mur condition - left boundary - classical
+    Ex[t+1 + 0*Nt] = Ex[t + 1*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + 1*Nt] - Ex[t + 0*Nt]);
+    // Mur condition - right boundary - classical
+    // Ex[t+1 + (Nz-1)*Nt] = Ex[t + (Nz-2)*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + (Nz-2)*Nt] - Ex[t + (Nz-1)*Nt]);
+
+    // Mur condition - left  boundary - fractional
+    // Ex[t+1 + 0*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[t+1 + 1*Nt] +
+    //                  (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[t + 1*Nt] - Ex[t + 0*Nt]);
+    // for(n = 0; n < t; n++)
+    // {
+    //     Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 1*Nt];
+    //     Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 0*Nt];
+    // }
+    // Mur condition - right boundary - fractional
     Ex[t+1 + (Nz-1)*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[t+1 + (Nz-2)*Nt] +
                           (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[t + (Nz-2)*Nt] - Ex[t + (Nz-1)*Nt]);
     for(n = 0; n < t; n++)
@@ -110,6 +129,7 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
         Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-1)*Nt];
         Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-2)*Nt];
     }
+    
 #else 
     #ifdef OPEN_MP_SPACE
         #pragma omp parallel for
@@ -132,9 +152,9 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
     int k = 1;
     int n = 0;
 #ifdef MUR_CONDITION
-    #ifdef OPEN_MP_SPACE
-        #pragma omp parallel for
-    #endif
+#ifdef OPEN_MP_SPACE
+    #pragma omp parallel for
+#endif
     for(k = 1; k < Nz-1; k++)
     {
         // update based on Hy rotation
@@ -238,9 +258,9 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
     int k = 1;
 
 #ifdef MUR_CONDITION
-    #ifdef OPEN_MP_SPACE
-        #pragma omp parallel for
-    #endif
+#ifdef OPEN_MP_SPACE
+    #pragma omp parallel for
+#endif
     for(k = 1; k < Nz-1; k++)
     {
         Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
@@ -277,11 +297,11 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
 double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   const double alpha,
                   double* Ex, double* Hy,
-                  double* Ex_source, const int k_source,
+                  double* Ex_source, const int k_source, const int k_bound,
                   int save_result)
 {
     static int sim_counter = 0;
-    int k_bound = 600;
+
     // Precalculate GL coefficients
     double* GL_coeff_arr = calloc(Nt, sizeof(double)); // GL[0]=w1, GL[1]=w2, ... 
     GL_coeff_arr[0] = fracGLCoeff(1.0, alpha, 0+1); // GL_1
@@ -302,6 +322,7 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
 #endif
 
 #ifdef ADD_SOURCE
+    if(t*dt < 2e-14) // stop source addition after certain point
         Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
 #endif
 
@@ -312,9 +333,12 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
 #endif
 
 #ifdef ADD_SOURCE
-        Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
-        Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
-        Hy[t+1 + (k_source-1)*Nt] = 0.0;
+        if(t*dt < 2e-14) // stop source addition after certain point
+        {
+            Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
+            Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
+            Hy[t+1 + (k_source-1)*Nt] = 0.0;
+        }
 #endif
     }
 
@@ -326,10 +350,10 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
         char filename[128];
         // sprintf(filename, ".\\results\\Ex_%d.bin", sim_counter);
         sprintf(filename, ".\\results\\Ex.bin");
-        saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt, alpha);
+        saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt, alpha, k_bound);
         printf("Ex field saved\n");
         sprintf(filename, ".\\results\\Hy.bin");
-        saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt, alpha);
+        saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt, alpha, k_bound);
         printf("Hy field saved\n");
     }
     sim_counter += 1;
@@ -404,7 +428,8 @@ void saveFieldToBinary(const char *filename,
                         const unsigned int Nt,
                         const double dz,
                         const double dt,
-                        const double alpha)
+                        const double alpha,
+                        const int k_bound)
 {
     FILE *fptr;
 	
@@ -420,6 +445,7 @@ void saveFieldToBinary(const char *filename,
     fwrite(&dz, sizeof(double), 1, fptr);
 	fwrite(&dt, sizeof(double), 1, fptr);
     fwrite(&alpha, sizeof(double), 1, fptr);
+    fwrite(&k_bound, sizeof(int), 1, fptr);
 
     // Writing data in chunks - for data larger than 4 GB at once fwrite can hang
     unsigned int offset = 0;
@@ -528,7 +554,7 @@ void checkStability()
             Ex[0+ k_source*Nt] = 1.0;
 
             // perform short simulation
-            simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, 1);
+            simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, Nz+10, 1);
 
             // If max_value greater than treshold - there is growth and simulation is unstable
             // Field value can exceed init value for first timesteps, but it decreases later.

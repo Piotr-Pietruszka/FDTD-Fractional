@@ -19,7 +19,6 @@
 #define MUR_CONDITION
 #define TIME_ROW_WISE // faster, default option
 
-// #define STABILITY_CHECK
 #define ADD_SOURCE
 
 #define CHUNK_SIZE_BYTES 2147483648 // 2 GB (2147483648 bytes)
@@ -61,9 +60,3 @@ void saveFieldToBinary(const char *filename,
 double binomialCoeff(const double alpha, const int k);
 
 double fracGLCoeff(const double w, const double alpha, const int n);
-
-void checkStability();
-
-double findMaxAbsValue(const int Nz, const int Nt, double* Ex);
-
-double findMaxAbsValueLastTimeStep(const int Nz, const int Nt, double* Ex);

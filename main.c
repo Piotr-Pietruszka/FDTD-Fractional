@@ -200,16 +200,12 @@ int main()
     sprintf(filename, ".\\results\\source.bin");
     saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha);
 
-#ifdef STABILITY_CHECK
-    checkStability();
-#else
     double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, 1);
     printf("simulation time: %lf s\n", sim_time);
 
     sprintf(filename, ".\\results\\results.txt");
     saveSimParamsToTxt(filename, dz, Lz, Nz,
                         dt, T, Nt, alpha, sim_time);
-#endif
 
     // free allocated memory
     free(Ex);

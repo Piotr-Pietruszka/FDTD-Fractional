@@ -15,6 +15,7 @@ int main()
     double alpha = 0.99;
     double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
     double dt = 0.999*dt_analytical; 
+    double dt_cl_ideal = dz/C_CONST;
 #else
     double alpha = 1.0;
     double dt = 0.999*dz/C_CONST; 
@@ -24,7 +25,7 @@ int main()
 
 
     // double Lz = 140.0e-6;
-    double Lz = 70.0e-6;
+    double Lz = 75.0e-6;
     double T = 18e-14;
     // double T = 20e-14;
     char source_char = 'm';
@@ -109,6 +110,8 @@ int main()
     double* Hy = calloc(Nz*Nt, sizeof(double));
     // source in time
     double* Ex_source = calloc(Nt, sizeof(double));
+    double* Ex_inc = calloc(Nt, sizeof(double));
+    double* Hy_inc = calloc(Nt, sizeof(double));
 
     if(Ex==NULL || Hy == NULL || Ex_source == NULL) 
     {
@@ -117,7 +120,8 @@ int main()
     } 
 
     // Source
-    int k_source = (int) (0.1e-6/dz);
+    // int k_source = (int) (0.1e-6/dz);
+    int k_source = (int) (10e-6/dz);
     printf("k_source= %d\n", k_source);
 
 
@@ -131,9 +135,6 @@ int main()
         
         if (source_type == MODULATED_GAUSSIAN)
         {
-            // double delay = 7.957747154594768e-15 - dt/2.0;
-            // Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
-            
             double max_fr = 750e12;
             double min_fr = 430e12;
             double central_fr = (max_fr+min_fr) / 2.0;
@@ -142,7 +143,11 @@ int main()
             double tau = 2.0 / M_PI / (max_fr-min_fr);
             double delay = 4*tau+dt/2;
 
-            Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*w_central) * exp( -pow((t*dt-delay) / tau, 2.0) ); // modulated gaussian
+            // TODO: Not +1 but +(1/2 + S*1/2)? where S = dt_cl_ideal/dt
+            // Hy_inc[t] = -sqrt(EPS_0/MU_0) * cos(((t+1)*dt-delay)*w_central) * exp( -pow(((t+1)*dt-delay) / tau, 2.0) );
+            Hy_inc[t] = -sqrt(EPS_0/MU_0) * cos(((t+0.5+0.5*dt_cl_ideal/dt)*dt-delay)*w_central) * exp( -pow(((t+0.5+0.5*dt_cl_ideal/dt)*dt-delay) / tau, 2.0) );
+            // Hy_inc[t] = -sqrt(EPS_0/MU_0) * cos(((t+0.5+0.5*dt/dt_cl_ideal)*dt-delay)*w_central) * exp( -pow(((t+0.5+0.5*dt/dt_cl_ideal)*dt-delay) / tau, 2.0) );
+            Ex_inc[t] = 1.0 * cos((t*dt-delay)*w_central) * exp( -pow((t*dt-delay) / tau, 2.0) );
         }
         else if (source_type == TRIANGLE)
         {
@@ -197,8 +202,8 @@ int main()
     sprintf(filename, ".\\results\\source.bin");
     saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha, Nz+10);
 
-    int k_bound = (int) (0.1e-6/dz) + (int) (20e-6/dz); // material boundary
-    double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, k_bound, 1);
+    int k_bound = k_source + (int) (20e-6/dz); // material boundary
+    double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_inc, Hy_inc, k_source, k_bound, 1);
     printf("simulation time: %lf s\n", sim_time);
 
     sprintf(filename, ".\\results\\results.txt");
@@ -209,4 +214,6 @@ int main()
     free(Ex);
     free(Hy);
     free(Ex_source);
+    free(Ex_inc);
+    free(Hy_inc);
 }

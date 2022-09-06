@@ -11,15 +11,12 @@
 #define EPS_0 8.85418781762e-12
 #define C_CONST 299792458.0
 
-#define ALPHA_ST_NUM 14
-#define DT_ST_NUM 14
-
 #define OPEN_MP_SPACE
 #define FRACTIONAL_SIM
 #define MUR_CONDITION
-#define TIME_ROW_WISE // faster, default option
 
 #define ADD_SOURCE
+#define VACUUM
 
 #define CHUNK_SIZE_BYTES 2147483648 // 2 GB (2147483648 bytes)
 
@@ -41,7 +38,7 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
 double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   const double alpha,
                   double* Ex, double* Hy,
-                  double* Ex_source, const int k_source, const int k_bound,
+                  double* Ex_inc, double* Hy_inc, const int k_source, const int k_bound,
                   int save_result);
 
 void saveSimParamsToTxt(const char *filename,

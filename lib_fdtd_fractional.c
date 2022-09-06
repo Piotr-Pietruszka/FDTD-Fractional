@@ -18,8 +18,6 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
                 const double* Ex, double* Hy, const int t, const double alpha,
                 const double* GL_coeff_arr)
 {
-
-#ifdef TIME_ROW_WISE
     int k = 0;
     int n = 0;
 #ifdef OPEN_MP_SPACE
@@ -43,24 +41,7 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
             Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
         }
     }
-#else
-    int k = 0;
-    int n = 0;
-#ifdef OPEN_MP_SPACE
-#pragma omp parallel for
-#endif
-    for(k = 0; k < Nz-1; k++)
-    {
-        // update based on Ex rotation
-        Hy[(t+1)*Nz + k] =  -pow(dt, alpha)/MU_0 * (Ex[t*Nz + k+1] - Ex[t*Nz + k])/dz;
 
-        // update based on previous Hy values (from GL derivative)
-        for(n = 0; n < t; n++)
-        {
-            Hy[(t+1)*Nz + k] -= Hy[(t-n)*Nz + k] * GL_coeff_arr[n];
-        }
-    }
-#endif
 }
 
 
@@ -82,11 +63,8 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
                 double* Ex, const double* Hy, const int t, const double alpha,
                 const double* GL_coeff_arr)
 {
-
-#ifdef TIME_ROW_WISE
     int k = 1;
     int n = 0;
-#ifdef MUR_CONDITION    
 #ifdef OPEN_MP_SPACE
     #pragma omp parallel for
 #endif
@@ -108,19 +86,10 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
             Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; 
         }
     }
+#ifdef MUR_CONDITION 
     // Mur condition - left boundary - classical
     Ex[t+1 + 0*Nt] = Ex[t + 1*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + 1*Nt] - Ex[t + 0*Nt]);
-    // Mur condition - right boundary - classical
-    // Ex[t+1 + (Nz-1)*Nt] = Ex[t + (Nz-2)*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + (Nz-2)*Nt] - Ex[t + (Nz-1)*Nt]);
 
-    // Mur condition - left  boundary - fractional
-    // Ex[t+1 + 0*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[t+1 + 1*Nt] +
-    //                  (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[t + 1*Nt] - Ex[t + 0*Nt]);
-    // for(n = 0; n < t; n++)
-    // {
-    //     Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 1*Nt];
-    //     Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 0*Nt];
-    // }
     // Mur condition - right boundary - fractional
     Ex[t+1 + (Nz-1)*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[t+1 + (Nz-2)*Nt] +
                           (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[t + (Nz-2)*Nt] - Ex[t + (Nz-1)*Nt]);
@@ -129,78 +98,9 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
         Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-1)*Nt];
         Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-2)*Nt];
     }
-    
-#else 
-    #ifdef OPEN_MP_SPACE
-        #pragma omp parallel for
-    #endif
-    for(k = 1; k < Nz-1; k++)
-    {
-        // update based on Hy rotation
-        Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
-        
-        // update based on previous Ex values (from GL derivative)
-        for(n = 0; n < t; n++)
-        {
-            Ex[t+1 + k*Nt] -= Ex[t-n + k*Nt] * GL_coeff_arr[n];
-        }      
-    }
 #endif
 
-#else
 
-    int k = 1;
-    int n = 0;
-#ifdef MUR_CONDITION
-#ifdef OPEN_MP_SPACE
-    #pragma omp parallel for
-#endif
-    for(k = 1; k < Nz-1; k++)
-    {
-        // update based on Hy rotation
-        Ex[(t+1)*Nz + k] = -pow(dt, alpha)/EPS_0* (Hy[(t+1)*Nz + k] - Hy[(t+1)*Nz + k-1]) / dz; // update based on Hy rotation
-        
-        // update based on previous Ex values (from GL derivative)
-        for(n = 0; n < t; n++)
-        {
-            Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * GL_coeff_arr[n];
-        }
-    }
-    // Mur condition - left boundary
-    Ex[t+1 + 0*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[(t+1)*Nz + 1] +
-                     (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[(t)*Nz + 1] - Ex[(t)*Nz + 0*Nt]);
-    for(n = 0; n < t; n++)
-    {
-        Ex[(t+1)*Nz + 0] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + 1];
-        Ex[(t+1)*Nz + 0] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + 0];
-    }
-
-    // Mur condition - right boundary   
-    Ex[(t+1)*Nz + Nz-1] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[(t+1)*Nz + Nz-2] +
-                          (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[(t)*Nz + Nz-2] - Ex[(t)*Nz + Nz-1]);
-    for(n = 0; n < t; n++)
-    {
-        Ex[(t+1)*Nz + Nz-1] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + Nz-1];
-        Ex[(t+1)*Nz + Nz-1] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + Nz-2];
-    }   
-#else 
-    #ifdef OPEN_MP_SPACE
-        #pragma omp parallel for
-    #endif
-    for(k = 1; k < Nz-1; k++)
-    {
-        // update based on Hy rotation
-        Ex[(t+1)*Nz + k] = -pow(dt, alpha)/EPS_0* (Hy[(t+1)*Nz + k] - Hy[(t+1)*Nz + k-1]) / dz; // update based on Hy rotation
-        
-        // update based on previous Ex values (from GL derivative)
-        for(n = 0; n < t; n++)
-        {
-            Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * GL_coeff_arr[n];
-        }      
-    }
-#endif
-
-#endif
 
 }
 
@@ -221,7 +121,6 @@ void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
                      const double* Ex, double* Hy, const int t)
 {
     int k = 1;
-#ifdef MUR_CONDITION
     #ifdef OPEN_MP_SPACE
         #pragma omp parallel for
     #endif
@@ -229,15 +128,6 @@ void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
     {
         Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
     }
-#else
-    #ifdef OPEN_MP_SPACE
-        #pragma omp parallel for
-    #endif
-    for(k = 0; k < Nz-1; k++)
-    {
-        Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
-    }
-#endif
 }
 
 /**
@@ -257,7 +147,6 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
 {
     int k = 1;
 
-#ifdef MUR_CONDITION
 #ifdef OPEN_MP_SPACE
     #pragma omp parallel for
 #endif
@@ -265,19 +154,11 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
     {
         Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
     }
+#ifdef MUR_CONDITION
     // Mur condition - left boundary
     Ex[t+1 + 0*Nt] = Ex[t + 1*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + 1*Nt] - Ex[t + 0*Nt]);
     // Mur condition - right boundary
     Ex[t+1 + (Nz-1)*Nt] = Ex[t + (Nz-2)*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + (Nz-2)*Nt] - Ex[t + (Nz-1)*Nt]);
-
-#else
-    #ifdef OPEN_MP_SPACE
-        #pragma omp parallel for
-    #endif
-    for(k = 1; k < Nz-1; k++)
-    {
-        Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
-    }
 #endif
 
 }
@@ -297,11 +178,9 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
 double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   const double alpha,
                   double* Ex, double* Hy,
-                  double* Ex_source, const int k_source, const int k_bound,
+                  double* Ex_inc, double* Hy_inc, const int k_source, const int k_bound,
                   int save_result)
 {
-    static int sim_counter = 0;
-
     // Precalculate GL coefficients
     double* GL_coeff_arr = calloc(Nt, sizeof(double)); // GL[0]=w1, GL[1]=w2, ... 
     GL_coeff_arr[0] = fracGLCoeff(1.0, alpha, 0+1); // GL_1
@@ -310,7 +189,7 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
 
     double start_time, end_time;
     start_time = omp_get_wtime();
-
+    
     // main time loop
     for (int t = 0; t < Nt-1; t++)
     {
@@ -322,8 +201,7 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
 #endif
 
 #ifdef ADD_SOURCE
-    if(t*dt < 2e-14) // stop source addition after certain point
-        Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
+    Hy[t+1 + (k_source-1)*Nt] += dt/(MU_0*dz)*Ex_inc[t+1]; // TFSF
 #endif
 
 #ifdef FRACTIONAL_SIM
@@ -333,12 +211,7 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
 #endif
 
 #ifdef ADD_SOURCE
-        if(t*dt < 2e-14) // stop source addition after certain point
-        {
-            Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
-            Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
-            Hy[t+1 + (k_source-1)*Nt] = 0.0;
-        }
+    Ex[t+1 + (k_source)*Nt] -= dt/(EPS_0*dz)*Hy_inc[t+1]; // TFSF
 #endif
     }
 
@@ -348,7 +221,6 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
     if(save_result)
     {
         char filename[128];
-        // sprintf(filename, ".\\results\\Ex_%d.bin", sim_counter);
         sprintf(filename, ".\\results\\Ex.bin");
         saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt, alpha, k_bound);
         printf("Ex field saved\n");
@@ -356,7 +228,6 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
         saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt, alpha, k_bound);
         printf("Hy field saved\n");
     }
-    sim_counter += 1;
 
     return sim_time;
 }
@@ -399,9 +270,7 @@ void saveSimParamsToTxt(const char *filename,
 #ifdef OPEN_MP_SPACE
     sim_flag = sim_flag | 1 << 2;
 #endif
-#ifdef TIME_ROW_WISE
-    sim_flag = sim_flag | 1 << 3;
-#endif
+    sim_flag = sim_flag | 1 << 3; // TIME_ROW_WISE
 
     // Write params separated by ,. Every new data pack - new line
     fprintf(fptr, "%d, ", sim_flag);

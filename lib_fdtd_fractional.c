@@ -1,10 +1,12 @@
 #include "lib_fdtd_fractional.h"
 
+
 /**
  * Update Hy field in 1D domain
  * 
  * @param dz spatial step size
  * @param Nz domain size (cells)
+ * @param k_bound boundary between vacuum (left) and fr-order material (right) (cells)
  * @param dt time step
  * @param Nt length of simulation (timesteps)
  * @param Ex Ex field array 
@@ -25,7 +27,7 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
 #endif
     for(k = 0; k < Nz-1; k++)
     {
-        if (k > k_bound)
+        if (k > k_bound) // fractional material
         {
             // update based on Hy rotation
             Hy[t+1 + k*Nt] =  -pow(dt, alpha)/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
@@ -36,7 +38,7 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
                 Hy[t+1 + k*Nt] -= Hy[t-n + k*Nt] * GL_coeff_arr[n];
             }
         }
-        else
+        else // vacuum
         {
             Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
         }
@@ -50,6 +52,7 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
  * 
  * @param dz spatial step size
  * @param Nz domain size (cells)
+ * @param k_bound boundary between vacuum (left) and fr-order material (right) (cells)
  * @param dt time step
  * @param Nt length of simulation (timesteps)
  * @param Ex Ex field array 
@@ -70,7 +73,7 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
 #endif
     for(k = 1; k < Nz-1; k++)
     {
-        if (k > k_bound)
+        if (k > k_bound) // fractional material
         {
             // update based on Hy rotation
             Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
@@ -81,7 +84,7 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
                 Ex[t+1 + k*Nt] -= Ex[t-n + k*Nt] * GL_coeff_arr[n];
             }
         }
-        else
+        else // vacuum
         {
             Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; 
         }
@@ -99,9 +102,6 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
         Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-2)*Nt];
     }
 #endif
-
-
-
 }
 
 
@@ -129,6 +129,7 @@ void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
         Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
     }
 }
+
 
 /**
  * Classical (non-fractional) Ex field update in 1D domain
@@ -163,6 +164,7 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
 
 }
 
+
 /**
  * simulation
  * 
@@ -173,6 +175,11 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
  * @param alpha fractional order of derivative
  * @param Ex Ex field array
  * @param Hy Hy field array
+ * @param Ex_inc Ex incident field array
+ * @param Hy_inc Hy incident field array
+ * @param k_source spatial index of TF/SF interface (cells)
+ * @param k_bound spatial index of material boundary (cells)
+ * @param save_result 0 - doesn't save fields to binary
  * @return simulation time in seconds
  */
 double simulation(const double dz, const int Nz, const double dt, const int Nt,
@@ -346,6 +353,7 @@ void saveFieldToBinary(const char *filename,
     }
 	fclose(fptr);
 }
+
 
 /**
  * Calculate next coefficient for Grunwald-Letnikov derivative

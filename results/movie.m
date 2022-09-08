@@ -21,10 +21,10 @@ ylim([min(field(:)) max(field(:))]);
 
 crop = false;
 % crop = true;
-% Nz_crop = 450;
+% Nz_crop = 1500;
 
-for t = 1:100:Nt
-% for t = 1:10:600
+% for t = 1:50:Nt
+for t = 1:50:Nt
     figure(2);
     z_arr = (1:Nz).*dz - dz; % -dz to start x-axis from 0
     field_at_t = field(t, 1:end); % field at specific time
@@ -47,21 +47,21 @@ for t = 1:100:Nt
     end
     
     hold on
-    line([k_bound+1 k_bound+1], ylim, "LineStyle", "--", "Color", [0.2 0.5470 0.8410]);
+    line([(k_bound+1)*dz (k_bound+1)*dz], ylim, "LineStyle", "--", "Color", [0.2 0.5470 0.8410]);
     hold off
     % Save frame video
     frame = getframe(gcf);
     writeVideo(writerObj, frame);
     
-%     % Save frame to file
+%     % Save frame to file - png
 %     save_filename = sprintf('t_%d.png', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
 %     saveas(gcf, save_filename);
     
-%     % Save with color
+%     % Save with color - eps
 %     save_filename = sprintf('t_%d', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
 %     saveas(gcf,save_filename, 'epsc');
        
-%     % Save in blank an white  
+%     % Save in black an white - eps 
 %     save_filename = sprintf('t_%d.eps', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
 %     saveas(gcf, save_filename);
 end

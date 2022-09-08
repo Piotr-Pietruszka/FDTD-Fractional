@@ -16,7 +16,6 @@
 #define MUR_CONDITION
 
 #define ADD_SOURCE
-#define VACUUM
 
 #define CHUNK_SIZE_BYTES 2147483648 // 2 GB (2147483648 bytes)
 

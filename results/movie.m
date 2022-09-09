@@ -22,8 +22,7 @@ crop = false;
 % crop = true;
 % Nz_crop = 450;
 
-for t = 1:200:Nt
-% for t = 1:10:600
+for t = 1:50:Nt
     figure(2);
     z_arr = (1:Nz).*dz - dz; % -dz to start x-axis from 0
     field_at_t = field(t, 1:end); % field at specific time

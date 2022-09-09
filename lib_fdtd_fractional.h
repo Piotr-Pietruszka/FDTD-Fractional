@@ -11,9 +11,6 @@
 #define EPS_0 8.85418781762e-12
 #define C_CONST 299792458.0
 
-#define ALPHA_ST_NUM 14
-#define DT_ST_NUM 14
-
 #define OPEN_MP_SPACE
 #define FRACTIONAL_SIM
 #define MUR_CONDITION

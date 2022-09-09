@@ -4,13 +4,9 @@ enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE, GAUSSIAN, SINUS};
 
 int main()
 {   
-
     // parameters to choose: alpha, T, Lz, source type
     // domain constants
-    // double dz = 0.005e-6;
     double dz = 0.01e-6;
-    // double dz = 0.005e-6;
-
 #ifdef FRACTIONAL_SIM
     double alpha = 0.99;
     double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
@@ -19,13 +15,10 @@ int main()
     double alpha = 1.0;
     double dt = 0.999*dz/C_CONST; 
 #endif
-    enum SourceType source_type = SINUS;
-    // enum SourceType source_type = TRIANGLE;
-
-
+    enum SourceType source_type = MODULATED_GAUSSIAN;
     // double Lz = 140.0e-6;
-    double Lz = 80.0e-6;
-    double T = 18e-14;
+    double Lz = 50.0e-6;
+    double T = 7e-14;
     // double T = 20e-14;
     char source_char = 'm';
 /*
@@ -109,17 +102,15 @@ int main()
     double* Hy = calloc(Nz*Nt, sizeof(double));
     // source in time
     double* Ex_source = calloc(Nt, sizeof(double));
-
     if(Ex==NULL || Hy == NULL || Ex_source == NULL) 
     {
         printf("Error - couldn't allocate memory for arrays\n"); 
         exit(1); 
     } 
 
-    // Source
+    // Source position
     int k_source = (int) (0.1e-6/dz);
     printf("k_source= %d\n", k_source);
-
 
     // First and last timesteps of source signal
     int first_t_source = -1;
@@ -128,12 +119,8 @@ int main()
 
     for (int t = 0; t < Nt-1; t++)
     {
-        
         if (source_type == MODULATED_GAUSSIAN)
         {
-            // double delay = 7.957747154594768e-15 - dt/2.0;
-            // Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
-            
             double max_fr = 750e12;
             double min_fr = 430e12;
             double central_fr = (max_fr+min_fr) / 2.0;
@@ -143,9 +130,6 @@ int main()
             double delay = 4*tau+dt/2;
 
             Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*w_central) * exp( -pow((t*dt-delay) / tau, 2.0) ); // modulated gaussian
-
-            // // double delay = 7.957747154594768e-15 - dt/2.0;
-            // Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*3.707079331235956e+15) * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
         }
         else if (source_type == TRIANGLE)
         {
@@ -176,24 +160,11 @@ int main()
             Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
         
         }
-        else if(source_type == SINUS)
-        {
-            double w_sin = 2* M_PI * 3e14;
-            if(t*dt > 8e-14 && sin((t*dt)*w_sin) < 1e-4)
-                stop_sin = 1;
-            if(stop_sin < 0)
-            {
-                Ex_source[t] = sin((t*dt)*w_sin); // modulated gaussian       
-            }        
-        }
     }
     if(source_type == RECTANGLE)
     {
         Ex_source[first_t_source-1] = 1.5; Ex_source[first_t_source-2] = 1.0; Ex_source[first_t_source-3] = 0.5; 
         Ex_source[last_t_source+1] = 1.5; Ex_source[last_t_source+2] = 1.0; Ex_source[last_t_source+3] = 0.5;     
-    
-        // Ex_source[first_t_source-1] = 1.75; Ex_source[first_t_source-2] = 1.5; Ex_source[first_t_source-3] = 1.25; Ex_source[first_t_source-4] = 1; Ex_source[first_t_source-5] = 0.75; Ex_source[first_t_source-6] = 0.5; Ex_source[first_t_source-7] = 0.25;
-        // Ex_source[last_t_source+1] = 1.75; Ex_source[last_t_source+2] = 1.5; Ex_source[last_t_source+3] = 1.25; Ex_source[last_t_source+4] = 1; Ex_source[last_t_source+5] = 0.75; Ex_source[last_t_source+6] = 0.5; Ex_source[last_t_source+7] = 0.25;    
     }
 
     char filename[128];

@@ -1,9 +1,17 @@
 #include "lib_fdtd_fractional.h"
 
-enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE, GAUSSIAN, SINUS};
 
 int main()
 {   
+
+#if SIMULATION_TYPE == FRACTIONAL_SIMULATION
+    printf("Simulation of fractional order material\n");
+#elif SIMULATION_TYPE == DIFFERENT_MATERIALS
+    printf("Simulation of different media: vacuum and fractional order material\n");
+#elif SIMULATION_TYPE == CLASSICAL_SIMULATION
+    printf("Classical simulation (vacuum)\n");
+#endif
+
     // parameters to choose: alpha, T, Lz, source type
     // domain constants
     double dz = 0.01e-6;

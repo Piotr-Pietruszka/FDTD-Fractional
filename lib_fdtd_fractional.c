@@ -1,7 +1,9 @@
 #include "lib_fdtd_fractional.h"
 
+
 /**
- * Update Hy field in 1D domain
+ * Update Hy field in 1D for domain filled with 
+ * fractional order material 
  * 
  * @param dz spatial step size
  * @param Nz domain size (cells)
@@ -14,17 +16,16 @@
  * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients, starts at w1
  * @return 
  */
-void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
-                const double* Ex, double* Hy, const int t, const double alpha,
-                const double* GL_coeff_arr)
+void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
+              const double* Ex, double* Hy, const int t, const double alpha,
+              const double* GL_coeff_arr)
 {
-
-#ifdef TIME_ROW_WISE
+ #ifdef TIME_ROW_WISE
     int k = 0;
     int n = 0;
-#ifdef OPEN_MP_SPACE
+  #ifdef OPEN_MP_SPACE
     #pragma omp parallel for
-#endif
+  #endif
     for(k = 0; k < Nz-1; k++)
     {
         // update based on Hy rotation
@@ -36,12 +37,12 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
             Hy[t+1 + k*Nt] -= Hy[t-n + k*Nt] * GL_coeff_arr[n];
         }
     }
-#else
+ #else // TIME_ROW_WISE
     int k = 0;
     int n = 0;
-#ifdef OPEN_MP_SPACE
+  #ifdef OPEN_MP_SPACE
     #pragma omp parallel for
-#endif
+  #endif
     for(k = 0; k < Nz-1; k++)
     {
         // update based on Ex rotation
@@ -53,12 +54,13 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
             Hy[(t+1)*Nz + k] -= Hy[(t-n)*Nz + k] * GL_coeff_arr[n];
         }
     }
-#endif
+ #endif // TIME_ROW_WISE
 }
 
 
 /**
- * Update Ex field in 1D domain
+ * Update Ex field in 1D domain for domain filled with 
+ * fractional order material
  * 
  * @param dz spatial step size
  * @param Nz domain size (cells)
@@ -71,29 +73,29 @@ void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt,
  * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients, starts at w1
  * @return 
  */
-void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
+void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
                 double* Ex, const double* Hy, const int t, const double alpha,
                 const double* GL_coeff_arr)
 {
 
-#ifdef TIME_ROW_WISE
+ #ifdef TIME_ROW_WISE
     int k = 1;
     int n = 0;
-#ifdef OPEN_MP_SPACE
+  #ifdef OPEN_MP_SPACE
     #pragma omp parallel for
-#endif
+  #endif
     for(k = 1; k < Nz-1; k++)
     {
         // update based on Hy rotation
-        Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
-        
+        Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz;
+
         // update based on previous Ex values (from GL derivative)
         for(n = 0; n < t; n++)
         {
             Ex[t+1 + k*Nt] -= Ex[t-n + k*Nt] * GL_coeff_arr[n];
         }
     }
-#ifdef MUR_CONDITION  
+  #ifdef MUR_CONDITION  
     // Mur condition - left boundary
     Ex[t+1 + 0*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[t+1 + 1*Nt] +
                      (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[t + 1*Nt] - Ex[t + 0*Nt]);
@@ -110,25 +112,25 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
         Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-1)*Nt];
         Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-2)*Nt];
     }
-#endif
-#else
+  #endif // MUR_CONDITION
+ #else // TIME_ROW_WISE
     int k = 1;
     int n = 0;
-#ifdef OPEN_MP_SPACE
+  #ifdef OPEN_MP_SPACE
     #pragma omp parallel for
-#endif
+  #endif
     for(k = 1; k < Nz-1; k++)
     {
         // update based on Hy rotation
-        Ex[(t+1)*Nz + k] = -pow(dt, alpha)/EPS_0* (Hy[(t+1)*Nz + k] - Hy[(t+1)*Nz + k-1]) / dz; // update based on Hy rotation
-        
+        Ex[(t+1)*Nz + k] = -pow(dt, alpha)/EPS_0* (Hy[(t+1)*Nz + k] - Hy[(t+1)*Nz + k-1]) / dz;
+
         // update based on previous Ex values (from GL derivative)
         for(n = 0; n < t; n++)
         {
             Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * GL_coeff_arr[n];
         }
     }
-#ifdef MUR_CONDITION
+  #ifdef MUR_CONDITION
     // Mur condition - left boundary
     Ex[t+1 + 0*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[(t+1)*Nz + 1] +
                      (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[(t)*Nz + 1] - Ex[(t)*Nz + 0*Nt]);
@@ -145,11 +147,122 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
         Ex[(t+1)*Nz + Nz-1] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + Nz-1];
         Ex[(t+1)*Nz + Nz-1] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + Nz-2];
     }   
-#endif 
-
-#endif
-
+  #endif // MUR_CONDITION
+ #endif // TIME_ROW_WISE
 }
+
+
+/**
+ * Update Hy field in 1D for domain consisting of
+ * vaccum (left side) and fractional order material (right side)
+ * 
+ * @param dz spatial step size
+ * @param Nz domain size (cells)
+ * @param k_bound index of boundary between materials (vacuum and fr order)
+ * @param dt time step
+ * @param Nt length of simulation (timesteps)
+ * @param Ex Ex field array 
+ * @param Hy Hy field array
+ * @param t current timestep
+ * @param alpha fractional order of derivative
+ * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients, starts at w1
+ * @return 
+ */
+void HyUpdateDiffMaterials(const double dz, const int Nz, const int k_bound, 
+                           const double dt, const int Nt,
+                           const double* Ex, double* Hy, const int t, const double alpha,
+                           const double* GL_coeff_arr)
+{
+    int k = 0;
+    int n = 0;
+ #ifdef OPEN_MP_SPACE
+    #pragma omp parallel for
+ #endif
+    for(k = 0; k <= k_bound; k++) // Vacuum
+    {
+        Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
+    }
+ #ifdef OPEN_MP_SPACE
+    #pragma omp parallel for
+ #endif
+    for(k = k_bound+1; k < Nz-1; k++) // Fractional material
+    {
+        // update based on Hy rotation
+        Hy[t+1 + k*Nt] =  -pow(dt, alpha)/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
+
+        // update based on previous Hy values (from GL derivative)
+        for(n = 0; n < t; n++)
+        {
+            Hy[t+1 + k*Nt] -= Hy[t-n + k*Nt] * GL_coeff_arr[n];
+        }
+    }
+}
+
+
+/**
+ * Update Ex field in 1D domain for domain consisting of
+ * vaccum (left side) and fractional order material (right side)
+ * 
+ * @param dz spatial step size
+ * @param Nz domain size (cells)
+ * @param k_bound index of boundary between vaccum and fr material 
+ * @param dt time step
+ * @param Nt length of simulation (timesteps)
+ * @param Ex Ex field array 
+ * @param Hy Hy field array
+ * @param t current timestep
+ * @param alpha fractional order of derivative
+ * @param GL_coeff_arr Nt-size array of Gr-Let derivative coefficients, starts at w1
+ * @return 
+ */
+void ExUpdateDifferentMaterials(const double dz, const int Nz, const int k_bound, 
+                                const double dt, const int Nt,
+                                double* Ex, const double* Hy, const int t, const double alpha,
+                                const double* GL_coeff_arr)
+{
+    int k = 1;
+    int n = 0;
+ #ifdef OPEN_MP_SPACE
+    #pragma omp parallel for
+ #endif
+    for(k = 1; k <= k_bound; k++) // Vacuum
+    {
+        Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
+    }
+ #ifdef OPEN_MP_SPACE
+    #pragma omp parallel for
+ #endif
+    for(k = k_bound+1; k < Nz-1; k++)
+    {
+        // update based on Hy rotation
+        Ex[t+1 + k*Nt] = -pow(dt, alpha)/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz;
+
+        // update based on previous Ex values (from GL derivative)
+        for(n = 0; n < t; n++)
+        {
+            Ex[t+1 + k*Nt] -= Ex[t-n + k*Nt] * GL_coeff_arr[n];
+        }
+    }
+ #ifdef MUR_CONDITION  
+    // Mur condition - left boundary
+    Ex[t+1 + 0*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[t+1 + 1*Nt] +
+                     (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[t + 1*Nt] - Ex[t + 0*Nt]);
+    for(n = 0; n < t; n++)
+    {
+        Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 1*Nt];
+        Ex[t+1 + 0*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + 0*Nt];
+    }
+    // Mur condition - right boundary   
+    Ex[t+1 + (Nz-1)*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[t+1 + (Nz-2)*Nt] +
+                          (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[t + (Nz-2)*Nt] - Ex[t + (Nz-1)*Nt]);
+    for(n = 0; n < t; n++)
+    {
+        Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-1)*Nt];
+        Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-2)*Nt];
+    }
+ #endif // MUR_CONDITION
+}
+
 
 
 /**
@@ -164,8 +277,8 @@ void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt,
  * @param t current timestep
  * @return 
  */
-void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
-                     const double* Ex, double* Hy, const int t)
+void HyUpdateClassical(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
+                       const double* Ex, double* Hy, const int t)
 {
     int k = 1;
 #ifdef OPEN_MP_SPACE
@@ -176,6 +289,7 @@ void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
         Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
     }
 }
+
 
 /**
  * Classical (non-fractional) Ex field update in 1D domain
@@ -189,11 +303,10 @@ void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
  * @param t current timestep
  * @return 
  */
-void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
-                     double* Ex, const double* Hy, const int t)
+void ExUpdateClassical(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
+                      double* Ex, const double* Hy, const int t)
 {
     int k = 1;
-
 #ifdef OPEN_MP_SPACE
     #pragma omp parallel for
 #endif
@@ -208,6 +321,7 @@ void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const dou
     Ex[t+1 + (Nz-1)*Nt] = Ex[t + (Nz-2)*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + (Nz-2)*Nt] - Ex[t + (Nz-1)*Nt]);
 #endif
 }
+
 
 /**
  * simulation
@@ -241,23 +355,31 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
     for (int t = 0; t < Nt-1; t++)
     {
 
-#ifdef FRACTIONAL_SIM
-        HyUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-#else
-        HyClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
+#if SIMULATION_TYPE == FRACTIONAL_SIMULATION
+        HyUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
+#elif SIMULATION_TYPE == DIFFERENT_MATERIALS
+        HyUpdateDiffMaterials(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
+#elif SIMULATION_TYPE == CLASSICAL_SIMULATION
+        HyUpdateClassical(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
 #endif
 
-#ifdef ADD_SOURCE
+#if SIMULATION_TYPE == DIFFERENT_MATERIALS
+        // tfsf
+#else
         Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
 #endif
 
-#ifdef FRACTIONAL_SIM
-        ExUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-#else
-        ExClassicUpdate(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
+#if SIMULATION_TYPE == FRACTIONAL_SIMULATION
+        ExUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
+#elif SIMULATION_TYPE == DIFFERENT_MATERIALS
+        ExUpdateDifferentMaterials(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
+#elif SIMULATION_TYPE == CLASSICAL_SIMULATION
+        ExUpdateClassical(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
 #endif
 
-#ifdef ADD_SOURCE
+#if SIMULATION_TYPE == DIFFERENT_MATERIALS
+        // tfsf
+#else
         Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
         Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
         Hy[t+1 + (k_source-1)*Nt] = 0.0;
@@ -309,7 +431,7 @@ void saveSimParamsToTxt(const char *filename,
     
     // Get simulation flags
     unsigned int sim_flag = 0;
-#ifdef FRACTIONAL_SIM
+#if SIM_TYPE == FRACTIONAL_SIMULATION
     sim_flag = sim_flag | 1;
 #endif
 #ifdef MUR_CONDITION
@@ -330,6 +452,7 @@ void saveSimParamsToTxt(const char *filename,
 
 	fclose(fptr);
 }
+
 
 
 /**
@@ -383,7 +506,6 @@ void saveFieldToBinary(const char *filename,
         if (ret != Nz*Nt-last_data) {
             printf("Stream error indication %d\n", ferror(fptr));
         }
-        
     }
     else
     {
@@ -394,6 +516,7 @@ void saveFieldToBinary(const char *filename,
     }
 	fclose(fptr);
 }
+
 
 /**
  * Calculate next coefficient for Grunwald-Letnikov derivative
@@ -408,7 +531,6 @@ double fracGLCoeff(const double w, const double alpha, const int n)
 {
     return (1.0 - (1.0+alpha)/n) * w;
 }
-
 
 /**
  * Calculate generalised binomial coefficient

@@ -4,36 +4,51 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
 #include <omp.h>
 
+/* ------------------ Physical constants ------------------*/
 #define MU_0 1.2566371e-6
 #define EPS_0 8.85418781762e-12
 #define C_CONST 299792458.0
 
+/* ------------------ Simulation flags and options ------------------*/
 #define OPEN_MP_SPACE
-#define FRACTIONAL_SIM
 #define MUR_CONDITION
-#define TIME_ROW_WISE // faster, default option
+#define TIME_ROW_WISE // faster, default option for indexation of field arrays
 
-#define ADD_SOURCE
+#define FRACTIONAL_SIMULATION 0
+#define DIFFERENT_MATERIALS 1
+#define CLASSICAL_SIMULATION 2
+#define SIMULATION_TYPE FRACTIONAL_SIMULATION
 
-#define CHUNK_SIZE_BYTES 2147483648 // 2 GB (2147483648 bytes)
+enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE, GAUSSIAN, SINUS};
 
+#define CHUNK_SIZE_BYTES 2147483648 // 2 GB (2147483648 bytes); used in saving file to bin
 
-void HyUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
-                const double* Ex, double* Hy, const int t, const double alpha, 
-                const double* GL_coeff_arr);
+/* ------------------ Function declarations ------------------*/
+void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
+              const double* Ex, double* Hy, const int t, const double alpha, 
+              const double* GL_coeff_arr);
 
-void ExUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
-                double* Ex, const double* Hy, const int t, const double alpha, 
-                const double* GL_coeff_arr);
+void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
+              double* Ex, const double* Hy, const int t, const double alpha, 
+              const double* GL_coeff_arr);
 
-void HyClassicUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
-                     const double* Ex, double* Hy, const int t);
+void HyUpdateDiffMaterials(const double dz, const int Nz, const int k_bound, 
+                           const double dt, const int Nt,
+                           const double* Ex, double* Hy, const int t, const double alpha,
+                           const double* GL_coeff_arr);
 
-void ExClassicUpdate(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
-                     double* Ex, const double* Hy, const int t);
+void ExUpdateDifferentMaterials(const double dz, const int Nz, const int k_bound, 
+                                const double dt, const int Nt,
+                                double* Ex, const double* Hy, const int t, const double alpha,
+                                const double* GL_coeff_arr);
+
+void HyUpdateClassical(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
+                       const double* Ex, double* Hy, const int t);
+
+void ExUpdateClassical(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
+                       double* Ex, const double* Hy, const int t);
 
 double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   const double alpha,

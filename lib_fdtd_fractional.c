@@ -1,5 +1,112 @@
 #include "lib_fdtd_fractional.h"
 
+/**
+ * Soft source - function to initialize source field in time (Ex_source). 
+ * 
+ * @param dz spatial step size
+ * @param dt time step size
+ * @param Nt length of simulation (timesteps)
+ * @param alpha fractional order of derivative
+ * @param Ex_source source Ex field array
+ * @param source_type type of source signal
+ * @return 
+ */
+void initializeSource(const double dz, const double dt, const int Nt, const double alpha,
+                      double* Ex_source, enum SourceType source_type)
+{
+    int first_t_source = -1;
+    int last_t_source = -1;
+    for (int t = 0; t < Nt-1; t++)
+    {
+        if (source_type == MODULATED_GAUSSIAN)
+        {
+            double max_fr = 750e12;
+            double min_fr = 430e12;
+            double central_fr = (max_fr+min_fr) / 2.0;
+            double w_central = 2* M_PI * central_fr;
+            double tau = 2.0 / M_PI / (max_fr-min_fr);
+            double delay = 4*tau+dt/2;
+            Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*w_central) * 
+                           exp( -pow((t*dt-delay) / tau, 2.0) ); // modulated gaussian
+        }
+        else if (source_type == TRIANGLE)
+        {
+            if(t*dt > 0.4e-14 && t*dt < 0.5e-14)
+                Ex_source[t] = (t*dt - 0.4e-14) * 1 / 0.1e-14; // linear function growing to reach 1 at 0.5
+            else if(t*dt > 0.5e-14 && t*dt < 0.6e-14)
+                Ex_source[t] = 1.0 - (t*dt - 0.5e-14) * 1 / 0.1e-14; // linear function decreasing to reach 0 at 0.6
+        }
+        else if(source_type == RECTANGLE)
+        {
+            double start = 3.387e-15;
+            double end = 6.8e-15;
+            if(t*dt > start && t*dt < end)
+            {
+                if(first_t_source < 0)
+                    first_t_source = t;
+                Ex_source[t] = 2.0; // rectangular function
+                last_t_source = t;
+            }
+        }
+        else if(source_type == GAUSSIAN)
+        {
+            double delay = 7.957747154594768e-15 - dt/2.0;
+            Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
+        }
+    }
+    if(source_type == RECTANGLE)
+    {
+        Ex_source[first_t_source-1] = 1.5; Ex_source[first_t_source-2] = 1.0; Ex_source[first_t_source-3] = 0.5; 
+        Ex_source[last_t_source+1] = 1.5; Ex_source[last_t_source+2] = 1.0; Ex_source[last_t_source+3] = 0.5;     
+    }
+}
+
+
+/**
+ * Total field / scattered field. Function to initialize Ex incident field (Ex_source)
+ * and Hy incident field (Hy_source). Incident Hy field is for position (k_b-1/2)*dz and 
+ * incident Ex field for k_b*dz
+ * 
+ * @param dt time step size
+ * @param Nt length of simulation (timesteps)
+ * @param dt_cl_ideal ideal time-step for vacuum (dz/c)
+ * @param Ex_source Ex incident field
+ * @param Hy_source EHyx incident field
+ * @param source_type type of source signal
+ * @return 
+ */
+void initializeSourceTfsf(const double dt, const int Nt, const double dt_cl_ideal,
+                          double* Ex_source,  double* Hy_source, enum SourceType source_type)
+{
+    if(source_type != MODULATED_GAUSSIAN &&  source_type != GAUSSIAN)
+    {
+        printf("For TFSF interface: only modulated gaussian and gaussian source waves"
+               " are available. Using modulated gaussian.\n");
+        source_type = MODULATED_GAUSSIAN;      
+    }
+    for (int t = 0; t < Nt-1; t++)
+    {
+        if (source_type == MODULATED_GAUSSIAN)
+        {
+            double max_fr = 750e12;
+            double min_fr = 430e12;
+            double central_fr = (max_fr+min_fr) / 2.0;
+            double w_central = 2* M_PI * central_fr;
+            double tau = 2.0 / M_PI / (max_fr-min_fr);
+            double delay = 4*tau+dt/2;
+            Hy_source[t] = -sqrt(EPS_0/MU_0) * cos(((t+0.5+0.5*dt_cl_ideal/dt)*dt-delay)*w_central) * exp( -pow(((t+0.5+0.5*dt_cl_ideal/dt)*dt-delay) / tau, 2.0) );
+            Ex_source[t] = 1.0 * cos((t*dt-delay)*w_central) * exp( -pow((t*dt-delay) / tau, 2.0) );
+        }
+        else if(source_type == GAUSSIAN)
+        {
+            double delay = 7.957747154594768e-15 - dt/2.0;
+            Hy_source[t] = -sqrt(EPS_0/MU_0) * exp( -pow(((t+0.5+0.5*dt_cl_ideal/dt)*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian
+            Ex_source[t] = exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
+        }
+    }
+
+}
+
 
 /**
  * Update Hy field in 1D for domain filled with 
@@ -277,13 +384,13 @@ void ExUpdateDifferentMaterials(const double dz, const int Nz, const int k_bound
  * @param t current timestep
  * @return 
  */
-void HyUpdateClassical(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
+void HyUpdateClassical(const double dz, const int Nz, const double dt, const int Nt,
                        const double* Ex, double* Hy, const int t)
 {
     int k = 1;
-#ifdef OPEN_MP_SPACE
+ #ifdef OPEN_MP_SPACE
     #pragma omp parallel for
-#endif
+ #endif
     for(k = 0; k < Nz-1; k++)
     {
         Hy[t+1 + k*Nt] = Hy[t + k*Nt] - dt/MU_0 * (Ex[t + (k+1)*Nt] - Ex[t + k*Nt])/dz;
@@ -303,23 +410,23 @@ void HyUpdateClassical(const double dz, const int Nz, const int k_bound, const d
  * @param t current timestep
  * @return 
  */
-void ExUpdateClassical(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
+void ExUpdateClassical(const double dz, const int Nz, const double dt, const int Nt,
                       double* Ex, const double* Hy, const int t)
 {
     int k = 1;
-#ifdef OPEN_MP_SPACE
+ #ifdef OPEN_MP_SPACE
     #pragma omp parallel for
-#endif
+ #endif
     for(k = 1; k < Nz-1; k++)
     {
         Ex[t+1 + k*Nt] = Ex[t + k*Nt] - dt/EPS_0* (Hy[t+1 + k*Nt] - Hy[t+1 + (k-1)*Nt]) / dz; // update based on Hy rotation
     }
-#ifdef MUR_CONDITION
+ #ifdef MUR_CONDITION
     // Mur condition - left boundary
     Ex[t+1 + 0*Nt] = Ex[t + 1*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + 1*Nt] - Ex[t + 0*Nt]);
     // Mur condition - right boundary
     Ex[t+1 + (Nz-1)*Nt] = Ex[t + (Nz-2)*Nt] + (C_CONST*dt-dz)/(C_CONST*dt+dz) * (Ex[t+1 + (Nz-2)*Nt] - Ex[t + (Nz-1)*Nt]);
-#endif
+ #endif
 }
 
 
@@ -338,10 +445,9 @@ void ExUpdateClassical(const double dz, const int Nz, const int k_bound, const d
 double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   const double alpha,
                   double* Ex, double* Hy,
-                  double* Ex_source, const int k_source,
-                  int save_result)
+                  double* Ex_source, double* Hy_source, const int k_source, 
+                  const int k_bound, int save_result)
 {
-    int k_bound = 600;
     // Precalculate GL coefficients
     double* GL_coeff_arr = calloc(Nt, sizeof(double)); // GL[0]=w1, GL[1]=w2, ... 
     GL_coeff_arr[0] = fracGLCoeff(1.0, alpha, 0+1); // GL_1
@@ -354,36 +460,38 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
     // main time loop
     for (int t = 0; t < Nt-1; t++)
     {
-
-#if SIMULATION_TYPE == FRACTIONAL_SIMULATION
+        // Update Hy
+ #if SIMULATION_TYPE == FRACTIONAL_SIMULATION
         HyUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-#elif SIMULATION_TYPE == DIFFERENT_MATERIALS
+ #elif SIMULATION_TYPE == DIFFERENT_MATERIALS
         HyUpdateDiffMaterials(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-#elif SIMULATION_TYPE == CLASSICAL_SIMULATION
-        HyUpdateClassical(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
-#endif
-
-#if SIMULATION_TYPE == DIFFERENT_MATERIALS
-        // tfsf
-#else
+ #elif SIMULATION_TYPE == CLASSICAL_SIMULATION
+        HyUpdateClassical(dz, Nz, dt, Nt, Ex, Hy, t);
+ #endif
+        // Source - Hy modification
+ #if SIMULATION_TYPE == DIFFERENT_MATERIALS
+        Hy[t+1 + (k_source-1)*Nt] += dt/(MU_0*dz)*Ex_source[t+1]; // TFSF
+ #else
         Hy[t+1 + (k_source-1)*Nt] = -Hy[t+1 + k_source*Nt]; // Ex field update as if wave travelled in left direction
-#endif
+ #endif
 
-#if SIMULATION_TYPE == FRACTIONAL_SIMULATION
+        // Update Ex
+ #if SIMULATION_TYPE == FRACTIONAL_SIMULATION
         ExUpdate(dz, Nz, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-#elif SIMULATION_TYPE == DIFFERENT_MATERIALS
+ #elif SIMULATION_TYPE == DIFFERENT_MATERIALS
         ExUpdateDifferentMaterials(dz, Nz, k_bound, dt, Nt, Ex, Hy, t, alpha, GL_coeff_arr);
-#elif SIMULATION_TYPE == CLASSICAL_SIMULATION
-        ExUpdateClassical(dz, Nz, k_bound, dt, Nt, Ex, Hy, t);
-#endif
+ #elif SIMULATION_TYPE == CLASSICAL_SIMULATION
+        ExUpdateClassical(dz, Nz, dt, Nt, Ex, Hy, t);
+ #endif
 
-#if SIMULATION_TYPE == DIFFERENT_MATERIALS
-        // tfsf
-#else
+        // Source - Ex modification
+ #if SIMULATION_TYPE == DIFFERENT_MATERIALS
+        Ex[t+1 + (k_source)*Nt] -= dt/(EPS_0*dz)*Hy_source[t+1]; // TFSF
+ #else
         Ex[t+1 + (k_source)*Nt] += Ex_source[t+1]; // soft source
         Ex[t+1 + (k_source-1)*Nt] = 0.0; // remove left-travelling wave
         Hy[t+1 + (k_source-1)*Nt] = 0.0;
-#endif
+ #endif
     }
 
     end_time = omp_get_wtime();
@@ -393,10 +501,10 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
     {
         char filename[128];
         sprintf(filename, ".\\results\\Ex.bin");
-        saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt, alpha);
+        saveFieldToBinary(filename, Ex, Nz, Nt, dz, dt, alpha, k_bound);
         printf("Ex field saved\n");
         sprintf(filename, ".\\results\\Hy.bin");
-        saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt, alpha);
+        saveFieldToBinary(filename, Hy, Nz, Nt, dz, dt, alpha, k_bound);
         printf("Hy field saved\n");
     }
     return sim_time;
@@ -470,7 +578,8 @@ void saveFieldToBinary(const char *filename,
                         const unsigned int Nt,
                         const double dz,
                         const double dt,
-                        const double alpha)
+                        const double alpha, 
+                        const int k_bound)
 {
     FILE *fptr;
 	
@@ -486,6 +595,7 @@ void saveFieldToBinary(const char *filename,
     fwrite(&dz, sizeof(double), 1, fptr);
 	fwrite(&dt, sizeof(double), 1, fptr);
     fwrite(&alpha, sizeof(double), 1, fptr);
+    fwrite(&k_bound, sizeof(int), 1, fptr);
 
     // Writing data in chunks - for data larger than 4 GB at once fwrite can hang
     unsigned int offset = 0;

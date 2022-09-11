@@ -19,13 +19,19 @@
 #define FRACTIONAL_SIMULATION 0
 #define DIFFERENT_MATERIALS 1
 #define CLASSICAL_SIMULATION 2
-#define SIMULATION_TYPE FRACTIONAL_SIMULATION
+#define SIMULATION_TYPE DIFFERENT_MATERIALS
 
-enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE, GAUSSIAN, SINUS};
+enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE, GAUSSIAN};
 
 #define CHUNK_SIZE_BYTES 2147483648 // 2 GB (2147483648 bytes); used in saving file to bin
 
 /* ------------------ Function declarations ------------------*/
+void initializeSource(const double dz, const double dt, const int Nt, const double alpha,
+                      double* Ex_source, enum SourceType source_type);
+
+void initializeSourceTfsf(const double dt, const int Nt, const double dt_cl_ideal,
+                          double* Ex_source,  double* Hy_source, enum SourceType source_type);
+
 void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
               const double* Ex, double* Hy, const int t, const double alpha, 
               const double* GL_coeff_arr);
@@ -44,17 +50,17 @@ void ExUpdateDifferentMaterials(const double dz, const int Nz, const int k_bound
                                 double* Ex, const double* Hy, const int t, const double alpha,
                                 const double* GL_coeff_arr);
 
-void HyUpdateClassical(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
+void HyUpdateClassical(const double dz, const int Nz, const double dt, const int Nt,
                        const double* Ex, double* Hy, const int t);
 
-void ExUpdateClassical(const double dz, const int Nz, const int k_bound, const double dt, const int Nt,
+void ExUpdateClassical(const double dz, const int Nz, const double dt, const int Nt,
                        double* Ex, const double* Hy, const int t);
 
 double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   const double alpha,
                   double* Ex, double* Hy,
-                  double* Ex_source, const int k_source, 
-                  int save_result);
+                  double* Ex_source, double* Hy_source, const int k_source, 
+                  const int k_bound, int save_result);
 
 void saveSimParamsToTxt(const char *filename,
                            const double dz, const double Lz, const unsigned int Nz,
@@ -67,7 +73,8 @@ void saveFieldToBinary(const char *filename,
 							const unsigned int Nt,
                             const double dz,
                             const double dt,
-                            const double alpha);
+                            const double alpha, 
+                            const int k_bound);
 
 double binomialCoeff(const double alpha, const int k);
 

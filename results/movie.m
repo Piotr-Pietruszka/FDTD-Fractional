@@ -1,16 +1,19 @@
 function movie(filename)
 
 fptr=fopen(filename);
-spatial_temporal_dimensions =fread(fptr,2,'uint');
 
+% Load parameters and field from binary
+spatial_temporal_dimensions =fread(fptr,2,'uint');
 Nz=spatial_temporal_dimensions(1);
 Nt=spatial_temporal_dimensions(2);
 dz = fread(fptr,1,'double');
 dt = fread(fptr,1,'double');
 alpha = fread(fptr,1,'double');
+k_bound = fread(fptr,1,'int');
 field = fread(fptr, [Nt, Nz],'double');
 fclose(fptr);
 
+% Write to avi
 writerObj = VideoWriter('FieldInTime.avi');
 writerObj.FrameRate=10;
 open(writerObj);
@@ -32,7 +35,7 @@ for t = 1:50:Nt
         field_at_t = field_at_t(1:Nz_crop);
     end
     
-    % plot
+    % Plot
     plot(z_arr, field_at_t);
     xlabel('z [m]');
     ylabel("Ex [V/m]");
@@ -43,7 +46,13 @@ for t = 1:50:Nt
     if t == 1 % scale image if needed
 %         sc_h
     end
-    % Save frame video
+    if k_bound > 0 % Plot boundary between materials if needed
+        hold on
+        line([(k_bound+1)*dz (k_bound+1)*dz], ylim, "LineStyle", "--", "Color", [0.2 0.5470 0.8410]);
+        hold off
+    end    
+    
+    % Save frame to video
     frame = getframe(gcf);
     writeVideo(writerObj, frame);
     
@@ -51,13 +60,9 @@ for t = 1:50:Nt
 %     save_filename = sprintf('t_%d.png', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
 %     saveas(gcf, save_filename);
     
-%     % Save with color
+%     % Save with color - eps
 %     save_filename = sprintf('t_%d', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
 %     saveas(gcf,save_filename, 'epsc');
-       
-%     % Save in blank an white  
-%     save_filename = sprintf('t_%d.eps', t-1); % -1 to start from 0 (el 1 in Matalb - it is initial condition -> 0)
-%     saveas(gcf, save_filename);
 end
 close(writerObj);
 

@@ -3,7 +3,6 @@
 
 int main()
 {   
-
 #if SIMULATION_TYPE == FRACTIONAL_SIMULATION
     printf("Simulation of fractional order material\n");
 #elif SIMULATION_TYPE == DIFFERENT_MATERIALS
@@ -15,21 +14,23 @@ int main()
     // parameters to choose: alpha, T, Lz, source type
     // domain constants
     double dz = 0.01e-6;
-#ifdef FRACTIONAL_SIM
-    double alpha = 0.99;
-    double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
-    double dt = 0.999*dt_analytical; 
-#else
+    double dt_cl_ideal = dz/C_CONST;
+
+#if SIMULATION_TYPE == CLASSICAL_SIMULATION
     double alpha = 1.0;
     double dt = 0.999*dz/C_CONST; 
+#else 
+    double alpha = 0.98;
+    double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
+    double dt = 0.999*dt_analytical;
 #endif
     enum SourceType source_type = MODULATED_GAUSSIAN;
     // double Lz = 140.0e-6;
     double Lz = 50.0e-6;
-    double T = 7e-14;
+    double T = 12e-14;
     // double T = 20e-14;
-    char source_char = 'm';
 /*
+    char source_char = 'm';
     printf("Simulation of electromagnetic wave propagation in fractional-order material\n");
     int correct_input = 0;
     while(!correct_input)
@@ -110,76 +111,39 @@ int main()
     double* Hy = calloc(Nz*Nt, sizeof(double));
     // source in time
     double* Ex_source = calloc(Nt, sizeof(double));
+    double* Hy_source = calloc(Nt, sizeof(double)); // used only in tfsf
+
     if(Ex==NULL || Hy == NULL || Ex_source == NULL) 
     {
         printf("Error - couldn't allocate memory for arrays\n"); 
         exit(1); 
     } 
 
-    // Source position
+    // Source and boundary between materials
+#if SIMULATION_TYPE == DIFFERENT_MATERIALS
+    int k_source = (int) (10e-6/dz);
+    printf("k_source= %d\n", k_source);
+    int k_bound = k_source + (int) (20e-6/dz); // material boundary
+    printf("k_bound= %d\n", k_bound);
+    initializeSourceTfsf(dt, Nt, dt_cl_ideal, Ex_source,  Hy_source, source_type);
+#else
     int k_source = (int) (0.1e-6/dz);
     printf("k_source= %d\n", k_source);
-
-    // First and last timesteps of source signal
-    int first_t_source = -1;
-    int last_t_source = -1;
-    int stop_sin = -1;
-
-    for (int t = 0; t < Nt-1; t++)
+    int k_bound = -5; // domain is homogeneous
+    initializeSource(dz, dt, Nt, alpha, Ex_source, source_type);
+#endif
+    if(k_source > Nz || k_bound > (int) Nz)
     {
-        if (source_type == MODULATED_GAUSSIAN)
-        {
-            double max_fr = 750e12;
-            double min_fr = 430e12;
-            double central_fr = (max_fr+min_fr) / 2.0;
-            double w_central = 2* M_PI * central_fr;
-
-            double tau = 2.0 / M_PI / (max_fr-min_fr);
-            double delay = 4*tau+dt/2;
-
-            Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * cos((t*dt-delay)*w_central) * exp( -pow((t*dt-delay) / tau, 2.0) ); // modulated gaussian
-        }
-        else if (source_type == TRIANGLE)
-        {
-            if(t*dt > 0.4e-14 && t*dt < 0.5e-14)
-            {
-                Ex_source[t] = (t*dt - 0.4e-14) * 1 / 0.1e-14; // linear function growing to reach 1 at 0.5
-            }
-            else if(t*dt > 0.5e-14 && t*dt < 0.6e-14)
-            {
-                Ex_source[t] = 1.0 - (t*dt - 0.5e-14) * 1 / 0.1e-14; // linear function decreasing to reach 0 at 0.6
-            }
-        }
-        else if(source_type == RECTANGLE)
-        {
-            double start = 3.387e-15;
-            double end = 6.8e-15;
-            if(t*dt > start && t*dt < end)
-            {
-                if(first_t_source < 0)
-                    first_t_source = t;
-                Ex_source[t] = 2.0; // rectangular function
-                last_t_source = t;
-            }
-        }
-        else if(source_type == GAUSSIAN)
-        {
-            double delay = 7.957747154594768e-15 - dt/2.0;
-            Ex_source[t] = 5.9916e+08 * pow(dt, alpha) / dz * exp( -pow((t*dt-delay) / (1.989436788648692e-15), 2.0) ); // modulated gaussian       
-        
-        }
-    }
-    if(source_type == RECTANGLE)
-    {
-        Ex_source[first_t_source-1] = 1.5; Ex_source[first_t_source-2] = 1.0; Ex_source[first_t_source-3] = 0.5; 
-        Ex_source[last_t_source+1] = 1.5; Ex_source[last_t_source+2] = 1.0; Ex_source[last_t_source+3] = 0.5;     
+        printf("Source or boundary position exceeds domain size. Exiting");
+        exit(1);
     }
 
     char filename[128];
     sprintf(filename, ".\\results\\source.bin");
-    saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha);
+    saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha, k_bound);
 
-    double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, k_source, 1);
+    double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, Hy_source, k_source, k_bound, 1);
+
     printf("simulation time: %lf s\n", sim_time);
 
     sprintf(filename, ".\\results\\results.txt");

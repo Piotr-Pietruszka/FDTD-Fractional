@@ -9,6 +9,7 @@ Nt = spatial_temporal_dimensions(2);
 dz = fread(fptr,1,'double');
 dt = fread(fptr,1,'double');
 alpha = fread(fptr,1,'double');
+k_bound = fread(fptr,1,'int');
 field = fread(fptr, [Nt, Nz],'double');
 fclose(fptr);
 
@@ -27,6 +28,7 @@ for i = 1:length(z_points)
     end
     
     % plot
+    figure()
     plot(t_arr, field_at_z);
     xlabel('t [s]');
     ylabel("Ex [V/m]");

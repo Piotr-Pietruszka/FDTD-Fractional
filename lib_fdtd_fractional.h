@@ -12,14 +12,13 @@
 #define C_CONST 299792458.0
 
 /* ------------------ Simulation flags and options ------------------*/
-#define OPEN_MP_SPACE
-#define MUR_CONDITION
-#define TIME_ROW_WISE // faster, default option for indexation of field arrays
+#define OPEN_MP_SPACE // if defined, OpenMP is used to run spatial loops in parallel
+#define MUR_CONDITION // if defined, Mur condition is used. If not PEC
 
 #define FRACTIONAL_SIMULATION 0
 #define DIFFERENT_MATERIALS 1
 #define CLASSICAL_SIMULATION 2
-#define SIMULATION_TYPE DIFFERENT_MATERIALS
+#define SIMULATION_TYPE FRACTIONAL_SIMULATION
 
 enum SourceType {MODULATED_GAUSSIAN, TRIANGLE, RECTANGLE, GAUSSIAN};
 
@@ -61,11 +60,6 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
                   double* Ex, double* Hy,
                   double* Ex_source, double* Hy_source, const int k_source, 
                   const int k_bound, int save_result);
-
-void saveSimParamsToTxt(const char *filename,
-                           const double dz, const double Lz, const unsigned int Nz,
-                           const double dt, const double T, const unsigned int Nt,
-                           const double alpha, const double sim_time);
 
 void saveFieldToBinary(const char *filename,
 							const double *data,

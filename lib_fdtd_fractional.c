@@ -127,7 +127,6 @@ void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
               const double* Ex, double* Hy, const int t, const double alpha,
               const double* GL_coeff_arr)
 {
- #ifdef TIME_ROW_WISE
     int k = 0;
     int n = 0;
   #ifdef OPEN_MP_SPACE
@@ -144,24 +143,6 @@ void HyUpdate(const double dz, const int Nz, const double dt, const int Nt,
             Hy[t+1 + k*Nt] -= Hy[t-n + k*Nt] * GL_coeff_arr[n];
         }
     }
- #else // TIME_ROW_WISE
-    int k = 0;
-    int n = 0;
-  #ifdef OPEN_MP_SPACE
-    #pragma omp parallel for
-  #endif
-    for(k = 0; k < Nz-1; k++)
-    {
-        // update based on Ex rotation
-        Hy[(t+1)*Nz + k] =  -pow(dt, alpha)/MU_0 * (Ex[t*Nz + k+1] - Ex[t*Nz + k])/dz;
-
-        // update based on previous Hy values (from GL derivative)
-        for(n = 0; n < t; n++)
-        {
-            Hy[(t+1)*Nz + k] -= Hy[(t-n)*Nz + k] * GL_coeff_arr[n];
-        }
-    }
- #endif // TIME_ROW_WISE
 }
 
 
@@ -185,7 +166,6 @@ void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
                 const double* GL_coeff_arr)
 {
 
- #ifdef TIME_ROW_WISE
     int k = 1;
     int n = 0;
   #ifdef OPEN_MP_SPACE
@@ -220,42 +200,6 @@ void ExUpdate(const double dz, const int Nz, const double dt, const int Nt,
         Ex[t+1 + (Nz-1)*Nt] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[t-n + (Nz-2)*Nt];
     }
   #endif // MUR_CONDITION
- #else // TIME_ROW_WISE
-    int k = 1;
-    int n = 0;
-  #ifdef OPEN_MP_SPACE
-    #pragma omp parallel for
-  #endif
-    for(k = 1; k < Nz-1; k++)
-    {
-        // update based on Hy rotation
-        Ex[(t+1)*Nz + k] = -pow(dt, alpha)/EPS_0* (Hy[(t+1)*Nz + k] - Hy[(t+1)*Nz + k-1]) / dz;
-
-        // update based on previous Ex values (from GL derivative)
-        for(n = 0; n < t; n++)
-        {
-            Ex[(t+1)*Nz + k] -= Ex[(t-n)*Nz + k] * GL_coeff_arr[n];
-        }
-    }
-  #ifdef MUR_CONDITION
-    // Mur condition - left boundary
-    Ex[t+1 + 0*Nt] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[(t+1)*Nz + 1] +
-                     (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[(t)*Nz + 1] - Ex[(t)*Nz + 0*Nt]);
-    for(n = 0; n < t; n++)
-    {
-        Ex[(t+1)*Nz + 0] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + 1];
-        Ex[(t+1)*Nz + 0] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + 0];
-    }
-    // Mur condition - right boundary   
-    Ex[(t+1)*Nz + Nz-1] = (C_CONST*pow(dt, alpha)-dz)/(C_CONST*pow(dt, alpha)+dz) * Ex[(t+1)*Nz + Nz-2] +
-                          (C_CONST*pow(dt, alpha))/(C_CONST*pow(dt, alpha)+dz) * (Ex[(t)*Nz + Nz-2] - Ex[(t)*Nz + Nz-1]);
-    for(n = 0; n < t; n++)
-    {
-        Ex[(t+1)*Nz + Nz-1] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + Nz-1];
-        Ex[(t+1)*Nz + Nz-1] -=  (dz)/(C_CONST*pow(dt, alpha)+dz) * GL_coeff_arr[n] * Ex[(t-n)*Nz + Nz-2];
-    }   
-  #endif // MUR_CONDITION
- #endif // TIME_ROW_WISE
 }
 
 
@@ -512,58 +456,6 @@ double simulation(const double dz, const int Nz, const double dt, const int Nt,
 
 
 /**
- * Save parameters of simulation to text file. Append to existing data
- * 
- * @param filename name of binary file
- * @param dz 
- * @param Lz 
- * @param Nz  
- * @param dt 
- * @param T 
- * @param Nt 
- * @param alpha 
- * @param sim_time simulation time in seconds
- * @return 
- */
-void saveSimParamsToTxt(const char *filename,
-                           const double dz, const double Lz, const unsigned int Nz,
-                           const double dt, const double T, const unsigned int Nt,
-                           const double alpha, const double sim_time)
-{
-    FILE *fptr;
-	if ((fptr = fopen(filename, "a")) == NULL)
-    {
-        printf("cannot open file!\n");
-        exit(1); 
-    }
-    
-    // Get simulation flags
-    unsigned int sim_flag = 0;
-#if SIM_TYPE == FRACTIONAL_SIMULATION
-    sim_flag = sim_flag | 1;
-#endif
-#ifdef MUR_CONDITION
-    sim_flag = sim_flag | 1 << 1;
-#endif
-#ifdef OPEN_MP_SPACE
-    sim_flag = sim_flag | 1 << 2;
-#endif
-#ifdef TIME_ROW_WISE
-    sim_flag = sim_flag | 1 << 3;
-#endif
-
-    // Write params separated by ,. Every new data pack - new line
-    fprintf(fptr, "%d, ", sim_flag);
-    fprintf(fptr, "%e, %d, %e, ", dz, Nz, Lz);
-    fprintf(fptr, "%e, %d, %e, ", dt, Nt, T);
-    fprintf(fptr, "%e, %e\n", alpha, sim_time);
-
-	fclose(fptr);
-}
-
-
-
-/**
  * Save field to binary file
  * 
  * @param filename name of binary file
@@ -598,11 +490,9 @@ void saveFieldToBinary(const char *filename,
     fwrite(&k_bound, sizeof(int), 1, fptr);
 
     // Writing data in chunks - for data larger than 4 GB at once fwrite can hang
-    unsigned int offset = 0;
     unsigned int chunk_size = CHUNK_SIZE_BYTES / sizeof(double); // chunk size - 2 GB equivalent
     if(Nz*Nt > chunk_size)
     {
-        // printf("Writing in chunks. Single chunk size: %d\n", chunk_size);
         unsigned int last_data = 0;
         for (unsigned int i = 0; i < Nz*Nt-chunk_size; i += chunk_size)
         {

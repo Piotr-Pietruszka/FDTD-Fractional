@@ -15,3 +15,6 @@ results/name.py
 results/fig_gauss_propag*.m
 results/*.asv
 results/*.eps
+results/time_results.m
+results/sc_h.m
+results/readField.m

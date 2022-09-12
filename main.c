@@ -24,77 +24,10 @@ int main()
     double dt_analytical = pow(2.0, 1.0-1.0/alpha) * pow(sqrt(EPS_0*MU_0) * dz, 1.0/alpha);
     double dt = 0.999*dt_analytical;
 #endif
+
     enum SourceType source_type = MODULATED_GAUSSIAN;
-    // double Lz = 140.0e-6;
-    double Lz = 50.0e-6;
-    double T = 12e-14;
-    // double T = 20e-14;
-/*
-    char source_char = 'm';
-    printf("Simulation of electromagnetic wave propagation in fractional-order material\n");
-    int correct_input = 0;
-    while(!correct_input)
-    {
-        // Get alpha from user
-        printf("\nOrder - alpha [0.9 - 1.0]: ");
-        if (!scanf("%lf", &alpha))
-        {
-            scanf("%*[^\n]"); //discard that line up to the newline
-            printf("Wrong value of order!\n");
-            continue;
-        }
-        else if(alpha < 0.9 || alpha > 1.0)
-        {
-            printf("Wrong value of order - use values only from [0.9, 1] interval\n");
-            continue;
-        }
-
-        // Get Lz from user
-        printf("Size of computational domain - Lz [1e-6 - 200e-6]: ");
-        if (!scanf("%lf", &Lz))
-        {
-            scanf("%*[^\n]"); //discard that line up to the newline
-            printf("Wrong value of Lz\n");
-            continue;
-        }
-        else if(Lz < 1e-6 || Lz > 200e-6)
-        {
-            printf("Wrong value of Lz - use values only from [1e-6, 200e-6] interval\n");
-            continue;
-        }
-        
-        // Get T from user
-        printf("Simulation time - T [1e-14 - 40e-14]: ");
-        if (!scanf("%lf", &T))
-        {
-            scanf("%*[^\n]"); //discard that line up to the newline
-            printf("Wrong value of T!\n");
-            continue;
-        }
-        else if(T < 1e-14 || T > 40e-14)
-        {
-            printf("Wrong value of T - use values only from [1e-14 - 40e-14] interval\n");
-            continue;
-        }  
-        scanf("%*[^\n]"); //discard that line up to the newline
-        // Get source type
-        printf("Source type: m (modulated gaussian) / r (rectangle) / t (triangle) / g (gaussian): ");
-        if (!scanf(" %c", &source_char))
-        {
-            scanf("%*[^\n]"); //discard that line up to the newline
-            printf("Wrong value of source type!\n");
-            continue;
-        }
-        else if(!(source_char=='m' || source_char=='r' || source_char=='t' || source_char=='g'))
-        {
-            printf("Wrong value of source_type - use values only m, r, t or\n");
-            continue;
-        }  
-
-        correct_input = 1;
-    }
-    */
-    
+    double Lz = 110.0e-6;
+    double T = 18e-14;
     unsigned int Nz = (int) (Lz/dz);
     unsigned int Nt =  (int) (T/dt);
 
@@ -142,13 +75,9 @@ int main()
     sprintf(filename, ".\\results\\source.bin");
     saveFieldToBinary(filename, Ex_source, 1, Nt, dz, dt, alpha, k_bound);
 
+    // Run simulation
     double sim_time = simulation(dz, Nz, dt, Nt, alpha, Ex, Hy, Ex_source, Hy_source, k_source, k_bound, 1);
-
-    printf("simulation time: %lf s\n", sim_time);
-
-    sprintf(filename, ".\\results\\results.txt");
-    saveSimParamsToTxt(filename, dz, Lz, Nz,
-                        dt, T, Nt, alpha, sim_time);
+    printf("simulation execution time: %lf s\n", sim_time);
 
     // free allocated memory
     free(Ex);

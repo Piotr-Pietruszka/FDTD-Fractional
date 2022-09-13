@@ -13,9 +13,9 @@ Run:
 
 ## Files
 ### Simulation:
-- lib_fdtd_fractional.h - header file with function declarations, defined simulation type and physical constants.
+- lib_fdtd_fractional.h - header file with function declarations, defined simulation type and physical constants. SIMULATION_TYPE determines type of simulation (classical / fractional / mixed materials: vacuum and fractional).
 - lib_fdtd_fractional.c - function's definitions: update of field values, source initialization, saving results to binary file, simulation time loop.
-- main.c - main file with defined simulation parameters and function calls.
+- main.c - main file with defined simulation parameters (steps sizes, computational domain size, simulation time, type of source) and function calls.
 
 ### Visualisation - Matlab scripts:
 - toWorkspace.m - load simulation parameters to workspace (order of fractional material, space and time step size, etc).

@@ -58,8 +58,9 @@ plot(alpha_arr_an, dt_arr_an)
 hold on
 scatter(alpha_arr_num, unstable_dt)
 set(gca,'yscale','log')
-legend(["granica analityczna", "wyniki numeryczne"])
+legend(["Analytical limit", "Numerical results"])
 xlabel("\alpha")
 ylabel("\Delta" + "t [s]")
-title(sprintf("Granica stabilnoœci, dz=%e m", dz))
+% title(sprintf("Stability boundary," + " \Delta" + "z=%e m", dz))
+% title("Stability boundary," + " \Delta" + sprintf("z=%e m", dz))
 grid on
